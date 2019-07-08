@@ -1,0 +1,18 @@
+[submodule "systems/et1"]
+	path = systems/et1
+	url = git@github.com:hmcts/et1.git
+[submodule "systems/et3"]
+	path = systems/et3
+	url = git@github.com:hmcts/et3.git
+[submodule "systems/admin"]
+	path = systems/admin
+	url = git@github.com:hmcts/et-admin.git
+[submodule "systems/api"]
+	path = systems/api
+	url = git@github.com:hmcts/et-api.git
+[submodule "systems/atos"]
+	path = systems/atos
+	url = git@github.com:hmcts/et-atos-file-transfer.git
+[submodule "systems/et_ccd_export"]
+	path = systems/et_ccd_export
+	url = git@github.com:hmcts/et-ccd-export.git
