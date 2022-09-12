@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml
+    kompose.version: 1.26.1 (HEAD)
+    traefik.http.routers.mail-router.rule: Host(`mail.et.127.0.0.1.nip.io`)
+    traefik.http.routers.mail-router.service: mail-service
+    traefik.http.services.mail-service.loadbalancer.server.port: "8025"
+  creationTimestamp: null
+  labels:
+    io.kompose.service: mailhog
+  name: mailhog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mailhog
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml
+        kompose.version: 1.26.1 (HEAD)
+        traefik.http.routers.mail-router.rule: Host(`mail.et.127.0.0.1.nip.io`)
+        traefik.http.routers.mail-router.service: mail-service
+        traefik.http.services.mail-service.loadbalancer.server.port: "8025"
+      creationTimestamp: null
+      labels:
+        io.kompose.network/et_full_system: "true"
+        io.kompose.service: mailhog
+    spec:
+      containers:
+        - image: mailhog/mailhog:v1.0.1
+          name: mailhog
+          resources: {}
+      restartPolicy: Always
+status: {}

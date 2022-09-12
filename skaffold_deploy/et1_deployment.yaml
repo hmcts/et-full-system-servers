@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: systems-et1
+  labels:
+    app: systems-et1
+spec:
+  ports:
+  - port: 3503
+    protocol: TCP
+  clusterIP: None
+  selector:
+    app: systems-et1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: systems-et1
+  labels:
+    app: systems-et1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: systems-et1
+  template:
+    metadata:
+      labels:
+        app: systems-et1
+    spec:
+      initContainers:
+      - name: systems-et1-db-setup
+        image: systems-et1
+        env:
+          - name: SECRET_KEY_BASE
+            value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+          - name: REDIS_URL
+            value: "redis://redis:6379/5"
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
+          - name: DB_USERNAME
+            value: postgres
+          - name: RAVEN_DSN
+            value: 'https://1b78623c8bab4dfb9aeb6f5dbb31ae34:0f4a38359e7e47f99e7e69449b32ef2b@sentry.io/1355286'
+        command:
+        - bundle
+        - exec
+        - rails
+        - db:create
+        - db:migrate
+      containers:
+      - name: systems-et1
+        image: systems-et1
+        ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: apply/ping.json
+            port: 8080
+          initialDelaySeconds: 85
+          timeoutSeconds: 4
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: apply/ping.json
+            port: 8080
+          initialDelaySeconds: 70
+          timeoutSeconds: 4
+          periodSeconds: 30
+        env:
+          - name: SECRET_KEY_BASE
+            value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+          - name: REDIS_URL
+            value: "redis://redis:6379/5"
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
+          - name: DB_USERNAME
+            value: postgres
+          - name: RAVEN_DSN
+            value: 'https://1b78623c8bab4dfb9aeb6f5dbb31ae34:0f4a38359e7e47f99e7e69449b32ef2b@sentry.io/1355286'

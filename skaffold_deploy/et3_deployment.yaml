@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: systems-et3
+  labels:
+    app: systems-et3
+spec:
+  ports:
+  - port: 3504
+    protocol: TCP
+  clusterIP: None
+  selector:
+    app: systems-et3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: systems-et3
+  labels:
+    app: systems-et3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: systems-et3
+  template:
+    metadata:
+      labels:
+        app: systems-et3
+    spec:
+      initContainers:
+      - name: systems-et3-db-setup
+        image: systems-et3
+        env:
+          - name: SECRET_KEY_BASE
+            value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+          - name: RAVEN_DSN
+            value: 'https://7f2374c2e0cd4650bf5129c9fe45215e:e0ae53d01bd7454da963790ee204ffa0@sentry.io/1376078'
+          - name: DB_NAME
+            value: et3_production
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
+          - name: DB_USERNAME
+            value: postgres
+        command:
+        - bundle
+        - exec
+        - rails
+        - db:create
+        - db:migrate
+      containers:
+      - name: systems-et3
+        image: systems-et3
+        ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ping.json
+            port: 8080
+          initialDelaySeconds: 60
+          timeoutSeconds: 2
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /ping.json
+            port: 8080
+          initialDelaySeconds: 50
+          timeoutSeconds: 2
+          periodSeconds: 30
+        env:
+          - name: SECRET_KEY_BASE
+            value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+          - name: RAVEN_DSN
+            value: 'https://7f2374c2e0cd4650bf5129c9fe45215e:e0ae53d01bd7454da963790ee204ffa0@sentry.io/1376078'
+          - name: DB_NAME
+            value: et3_production
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
+          - name: DB_USERNAME
+            value: postgres

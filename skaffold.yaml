@@ -1,0 +1,36 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: et-full-system-servers
+build:
+  artifacts:
+  - image: systems-et1
+    context: systems/et1
+    docker: {}
+  - image: systems-et3
+    context: systems/et3
+    docker: {}
+  - image: systems-api
+    context: systems/api
+    docker: {}
+  - image: systems-admin
+    context: systems/admin
+    docker: {}
+  - image: systems-atos
+    context: systems/atos
+    docker: {}
+  - image: systems-et-ccd-export
+    context: systems/et_ccd_export
+    docker: {}
+deploy:
+  kubectl:
+    manifests:
+    - skaffold_deploy/et1_deployment.yaml
+    - skaffold_deploy/et3_deployment.yaml
+    - skaffold_deploy/api_deployment.yaml
+    - skaffold_deploy/admin_deployment.yaml
+    - skaffold_deploy/atos_deployment.yaml
+    - skaffold_deploy/et_ccd_export_deployment.yaml
+    - skaffold_deploy/db-*.yaml
+    - skaffold_deploy/mailhog-*.yaml
+    - skaffold_deploy/redis-*.yaml
