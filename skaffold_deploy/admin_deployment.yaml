@@ -6,7 +6,8 @@ metadata:
     app: systems-admin
 spec:
   ports:
-  - port: 3500
+  - name: web
+    port: 8080
     protocol: TCP
   clusterIP: None
   selector:
@@ -29,6 +30,14 @@ spec:
         app: systems-admin
     spec:
       initContainers:
+      - name: init-wait-for-db
+        image: alpine
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && exit 0 || sleep 3; done; exit 1"]
+        env:
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
       - name: systems-admin-db-setup
         image: systems-admin
         env:
@@ -50,6 +59,8 @@ spec:
             value: 'atos'
           - name: ATOS_API_PASSWORD
             value: 'password'
+          - name: SEED_EXAMPLE_USERS
+            value: 'true'
         command:
         - bundle
         - exec
@@ -90,10 +101,16 @@ spec:
           - name: RAVEN_DSN
             value: 'https://ff44444af15e43a287fa10eb4f3fd825:b5764132fc3a42e98d8a7f8ba3042a90@sentry.io/1389908'
           - name: ATOS_API_URL
-            value: "http://atos.et.127.0.0.1.nip.io:3100"
+            value: "http://atos:8080"
           - name: ATOS_API_USERNAME
             value: 'atos'
           - name: ATOS_API_PASSWORD
             value: 'password'
+          - name: RAILS_SERVE_STATIC_FILES
+            value: 'true'
+          - name: SEED_EXAMPLE_USERS
+            value: 'true'
+          - name: ET_API_URL
+            value: 'http://api:8080/api'
 
 

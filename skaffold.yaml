@@ -25,11 +25,21 @@ build:
 deploy:
   kubectl:
     manifests:
+    - skaffold_deploy/00-account.yaml
+    - skaffold_deploy/00-role.yaml
+    - skaffold_deploy/01-role-binding.yaml
+    - skaffold_deploy/02-traefik.yaml
+    - skaffold_deploy/02-traefik-services.yaml
     - skaffold_deploy/et1_deployment.yaml
+    - skaffold_deploy/et1_ingress.yaml
     - skaffold_deploy/et3_deployment.yaml
+    - skaffold_deploy/et3_ingress.yaml
     - skaffold_deploy/api_deployment.yaml
+    - skaffold_deploy/api_ingress.yaml
     - skaffold_deploy/admin_deployment.yaml
+    - skaffold_deploy/admin_ingress.yaml
     - skaffold_deploy/atos_deployment.yaml
+    - skaffold_deploy/atos_ingress.yaml
     - skaffold_deploy/et_ccd_export_deployment.yaml
     - skaffold_deploy/db-*.yaml
     - skaffold_deploy/mailhog-*.yaml

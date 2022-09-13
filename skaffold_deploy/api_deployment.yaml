@@ -6,7 +6,8 @@ metadata:
     app: systems-api
 spec:
   ports:
-  - port: 3501
+  - name: web
+    port: 8080
     protocol: TCP
   clusterIP: None
   selector:
@@ -46,13 +47,7 @@ spec:
             value: "redis://redis:6379/2"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-        command:
-        - bundle
-        - exec
-        - rails
-        - db:create
-        - db:migrate
-        - db:seed
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && nc -zvw1 redis 6379 && bundle exec rails db:create db:migrate db:seed && exit 0 || sleep 3; done ;exit 1"]
       containers:
       - name: systems-api
         image: systems-api

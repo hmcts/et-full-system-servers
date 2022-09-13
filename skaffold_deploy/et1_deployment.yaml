@@ -6,7 +6,8 @@ metadata:
     app: systems-et1
 spec:
   ports:
-  - port: 3503
+  - name: web
+    port: 8080
     protocol: TCP
   clusterIP: None
   selector:
@@ -29,6 +30,14 @@ spec:
         app: systems-et1
     spec:
       initContainers:
+      - name: init-wait-for-db
+        image: alpine
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && exit 0 || sleep 3; done; exit 1"]
+        env:
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
       - name: systems-et1-db-setup
         image: systems-et1
         env:
@@ -84,3 +93,5 @@ spec:
             value: postgres
           - name: RAVEN_DSN
             value: 'https://1b78623c8bab4dfb9aeb6f5dbb31ae34:0f4a38359e7e47f99e7e69449b32ef2b@sentry.io/1355286'
+          - name: RAILS_SERVE_STATIC_FILES
+            value: 'true'

@@ -6,7 +6,8 @@ metadata:
     app: systems-atos
 spec:
   ports:
-  - port: 3502
+  - name: web
+    port: 8080
     protocol: TCP
   clusterIP: None
   selector:

@@ -6,7 +6,8 @@ metadata:
     app: systems-et3
 spec:
   ports:
-  - port: 3504
+  - name: web
+    port: 8080
     protocol: TCP
   clusterIP: None
   selector:
@@ -29,6 +30,14 @@ spec:
         app: systems-et3
     spec:
       initContainers:
+      - name: init-wait-for-db
+        image: alpine
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && exit 0 || sleep 3; done; exit 1"]
+        env:
+          - name: DB_HOST
+            value: db
+          - name: DB_PORT
+            value: "5432"
       - name: systems-et3-db-setup
         image: systems-et3
         env:
@@ -92,3 +101,5 @@ spec:
             value: "5432"
           - name: DB_USERNAME
             value: postgres
+          - name: RAILS_SERVE_STATIC_FILES
+            value: 'true'

@@ -25,6 +25,10 @@ spec:
       labels:
         app: systems-et-ccd-export
     spec:
+      initContainers:
+        - name: init-wait-for-redis
+          image: alpine
+          command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 redis 6379 && exit 0 || sleep 3; done; exit 1"]
       containers:
       - name: systems-et-ccd-export
         image: systems-et-ccd-export
