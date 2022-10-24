@@ -7,24 +7,52 @@ build:
   - image: et1
     context: systems/et1
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: et3
     context: systems/et3
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: api
     context: systems/api
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: admin
     context: systems/admin
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: atos
     context: systems/atos
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: et-ccd-export
     context: systems/et_ccd_export
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
   - image: fake-services
     context: support/fake_services
     docker: {}
+    sync:
+      manual:
+        - src: '**/*'
+          dest: ./
 deploy:
   kubectl:
     manifests:
