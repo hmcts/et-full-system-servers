@@ -1,0 +1,14 @@
+source 'https://rubygems.org'
+
+git_source(:github) do |repo_name|
+  repo_name = "#{repo_name}/#{repo_name}" unless repo_name.include?("/")
+  "https://github.com/#{repo_name}.git"
+end
+
+
+gem 'et_fake_acas_server', '~> 1.0'
+gem 'gov_fake_notify', git: 'https://github.com/hmcts/gov_fake_notify.git', tag: 'v1.2.0'
+gem 'et_fake_ccd', '~> 1.1'
+
+
+gem "foreman", "~> 0.87.2"

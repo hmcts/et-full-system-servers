@@ -1,0 +1,106 @@
+GIT
+  remote: https://github.com/hmcts/gov_fake_notify.git
+  revision: eb4e3a1825c6a4ef2d08f00689d8692de96d9c40
+  tag: v1.2.0
+  specs:
+    gov_fake_notify (1.2.0)
+      activemodel (>= 6.1)
+      iodine (~> 0.7)
+      jwt (~> 2.2, >= 2.2.3)
+      mail (~> 2.7, >= 2.7.1)
+      roda (~> 3.48)
+      thor (~> 1.1)
+      tilt (~> 2.0, >= 2.0.10)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activemodel (6.1.7)
+      activesupport (= 6.1.7)
+    activesupport (6.1.7)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      tzinfo (~> 2.0)
+      zeitwerk (~> 2.3)
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
+    concurrent-ruby (1.1.10)
+    et_fake_acas_server (1.0.0)
+      activesupport (>= 6.1)
+      iodine (~> 0.7)
+      nokogiri (~> 1.8, >= 1.8.2)
+      sinatra (~> 2.0, >= 2.0.3)
+      sinatra-contrib (~> 2.0)
+    et_fake_ccd (1.1.11)
+      activemodel (~> 6.1)
+      iodine (~> 0.7)
+      json-schema (~> 2.5)
+      roda (~> 3.21)
+      roda-enhanced_logger (~> 0.4.0)
+      rotp (~> 6.2)
+      thor (~> 1.0)
+      tilt (~> 2.0, >= 2.0.9)
+    foreman (0.87.2)
+    i18n (1.12.0)
+      concurrent-ruby (~> 1.0)
+    iodine (0.7.49)
+    json-schema (2.8.1)
+      addressable (>= 2.4)
+    jwt (2.5.0)
+    mail (2.7.1)
+      mini_mime (>= 0.1.1)
+    mini_mime (1.1.2)
+    mini_portile2 (2.6.1)
+    minitest (5.15.0)
+    multi_json (1.15.0)
+    mustermann (2.0.2)
+      ruby2_keywords (~> 0.0.1)
+    nokogiri (1.12.5)
+      mini_portile2 (~> 2.6.1)
+      racc (~> 1.4)
+    pastel (0.8.0)
+      tty-color (~> 0.5)
+    public_suffix (4.0.7)
+    racc (1.6.0)
+    rack (2.2.4)
+    rack-protection (2.2.2)
+      rack
+    roda (3.60.0)
+      rack
+    roda-enhanced_logger (0.4.0)
+      roda (>= 3.19.0)
+      tty-logger (>= 0.3, < 1.0)
+    rotp (6.2.0)
+    ruby2_keywords (0.0.5)
+    sinatra (2.2.2)
+      mustermann (~> 2.0)
+      rack (~> 2.2)
+      rack-protection (= 2.2.2)
+      tilt (~> 2.0)
+    sinatra-contrib (2.2.2)
+      multi_json
+      mustermann (~> 2.0)
+      rack-protection (= 2.2.2)
+      sinatra (= 2.2.2)
+      tilt (~> 2.0)
+    thor (1.2.1)
+    tilt (2.0.11)
+    tty-color (0.6.0)
+    tty-logger (0.6.0)
+      pastel (~> 0.8)
+    tzinfo (2.0.5)
+      concurrent-ruby (~> 1.0)
+    zeitwerk (2.6.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  et_fake_acas_server (~> 1.0)
+  et_fake_ccd (~> 1.1)
+  foreman (~> 0.87.2)
+  gov_fake_notify!
+
+BUNDLED WITH
+   2.2.6

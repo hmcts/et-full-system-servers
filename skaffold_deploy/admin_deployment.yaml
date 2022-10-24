@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: systems-admin
+  name: admin
   labels:
-    app: systems-admin
+    app: admin
 spec:
   ports:
   - name: web
@@ -11,35 +11,35 @@ spec:
     protocol: TCP
   clusterIP: None
   selector:
-    app: systems-admin
+    app: admin
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: systems-admin
+  name: admin
   labels:
-    app: systems-admin
+    app: admin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: systems-admin
+      app: admin
   template:
     metadata:
       labels:
-        app: systems-admin
+        app: admin
     spec:
       initContainers:
       - name: init-wait-for-db
         image: alpine
-        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && exit 0 || sleep 3; done; exit 1"]
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && exit 0 || sleep 10; done; exit 1"]
         env:
           - name: DB_HOST
             value: db
           - name: DB_PORT
             value: "5432"
-      - name: systems-admin-db-setup
-        image: systems-admin
+      - name: admin-db-setup
+        image: admin
         env:
           - name: DB_NAME
             value: 'et_api_production'
@@ -54,7 +54,7 @@ spec:
           - name: RAVEN_DSN
             value: 'https://ff44444af15e43a287fa10eb4f3fd825:b5764132fc3a42e98d8a7f8ba3042a90@sentry.io/1389908'
           - name: ATOS_API_URL
-            value: "http://atos.et.127.0.0.1.nip.io:3100"
+            value: "http://atos:8080"
           - name: ATOS_API_USERNAME
             value: 'atos'
           - name: ATOS_API_PASSWORD
@@ -67,8 +67,8 @@ spec:
         - rails
         - db:seed
       containers:
-      - name: systems-admin
-        image: systems-admin
+      - name: admin
+        image: admin
         ports:
             - name: http
               containerPort: 80
@@ -108,9 +108,29 @@ spec:
             value: 'password'
           - name: RAILS_SERVE_STATIC_FILES
             value: 'true'
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
           - name: SEED_EXAMPLE_USERS
             value: 'true'
           - name: ET_API_URL
             value: 'http://api:8080/api'
-
-
+          - name: ACAS_API_URL
+            value: "http://api:8080/et_acas_api"
+          - name: AZURE_STORAGE_BLOB_HOST
+            value: 'http://azurite:10000'
+          - name: AZURE_STORAGE_BLOB_FORCE_PATH_STYLE
+            value: 'true'
+          - name: AZURE_STORAGE_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_CONTAINER
+            value: 'et-api-test-container'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER
+            value: 'et-api-direct-test-container'

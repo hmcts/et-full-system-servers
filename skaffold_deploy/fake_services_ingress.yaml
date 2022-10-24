@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fake-services-ingress
+spec:
+  rules:
+    - host: acas.et.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fake-services
+                port:
+                  name: acas-web
+    - host: ccd.et.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fake-services
+                port:
+                  name: ccd-web
+    - host: notify.et.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fake-services
+                port:
+                  name: notify-web

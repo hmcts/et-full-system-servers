@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: systems-api
+  name: api
   labels:
-    app: systems-api
+    app: api
 spec:
   ports:
   - name: web
@@ -11,27 +11,27 @@ spec:
     protocol: TCP
   clusterIP: None
   selector:
-    app: systems-api
+    app: api
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: systems-api
+  name: api
   labels:
-    app: systems-api
+    app: api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: systems-api
+      app: api
   template:
     metadata:
       labels:
-        app: systems-api
+        app: api
     spec:
       initContainers:
-      - name: systems-api-db-setup
-        image: systems-api
+      - name: api-db-setup
+        image: api
         env:
           - name: DB_NAME
             value: 'et_api_production'
@@ -47,10 +47,30 @@ spec:
             value: "redis://redis:6379/2"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && nc -zvw1 redis 6379 && bundle exec rails db:create db:migrate db:seed && exit 0 || sleep 3; done ;exit 1"]
+          - name: AZURE_STORAGE_BLOB_HOST
+            value: 'http://azurite:10000'
+          - name: AZURE_STORAGE_BLOB_FORCE_PATH_STYLE
+            value: 'true'
+          - name: AZURE_STORAGE_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_CONTAINER
+            value: 'et-api-test-container'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER
+            value: 'et-api-direct-test-container'
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && nc -zvw1 redis 6379 && bundle exec rails db:create db:migrate db:seed configure_azure_storage_containers && exit 0 || sleep 3; done ;exit 1"]
       containers:
-      - name: systems-api
-        image: systems-api
+      - name: api
+        image: api
         ports:
             - name: http
               containerPort: 8080
@@ -84,8 +104,30 @@ spec:
             value: "redis://redis:6379/2"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-      - name: systems-api-sidekiq
-        image: systems-api
+          - name: AZURE_STORAGE_BLOB_HOST
+            value: 'http://azurite:10000'
+          - name: AZURE_STORAGE_BLOB_FORCE_PATH_STYLE
+            value: 'true'
+          - name: AZURE_STORAGE_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_CONTAINER
+            value: 'et-api-test-container'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER
+            value: 'et-api-direct-test-container'
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+          - name: ACAS_JSON_SERVICE_URL
+            value: 'http://fake-services:9000/ECCLJson'
+      - name: api-sidekiq
+        image: api
         ports:
           - name: http
             containerPort: 7433
@@ -117,5 +159,37 @@ spec:
             value: "redis://redis:6379/2"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+          - name: SECURE_SESSION_COOKIE
+            value: 'false'
+          - name: AZURE_STORAGE_BLOB_HOST
+            value: 'http://azurite:10000'
+          - name: AZURE_STORAGE_BLOB_FORCE_PATH_STYLE
+            value: 'true'
+          - name: AZURE_STORAGE_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_CONTAINER
+            value: 'et-api-test-container'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT
+            value: 'devstoreaccount1'
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY
+            value: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+          - name: AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER
+            value: 'et-api-direct-test-container'
+          - name: ACAS_JSON_SERVICE_URL
+            value: 'http://fake-services:9000/ECCLJson'
+          - name: SMTP_HOSTNAME
+            value: 'mailhog'
+          - name: SMTP_PORT
+            value: "1025"
+          - name: GOVUK_NOTIFY_CUSTOM_URL
+            value: "http://fake-services:9200"
+          - name: GOVUK_NOTIFY_API_KEY_LIVE
+            value: "fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d"
         command:
         - "./run_sidekiq.sh"

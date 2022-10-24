@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: systems-atos-ingress
+  name: atos-ingress
 spec:
   rules:
     - host: atos.et.127.0.0.1.nip.io
@@ -11,6 +11,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: systems-atos
+                name: atos
                 port:
                   name: web

@@ -1,40 +1,64 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: systems-et-ccd-export
+  name: et-ccd-export
   labels:
-    app: systems-et-ccd-export
+    app: et-ccd-export
 spec:
   clusterIP: None
   selector:
-    app: systems-et-ccd-export
+    app: et-ccd-export
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: systems-et-ccd-export
+  name: et-ccd-export
   labels:
-    app: systems-et-ccd-export
+    app: et-ccd-export
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: systems-et-ccd-export
+      app: et-ccd-export
   template:
     metadata:
       labels:
-        app: systems-et-ccd-export
+        app: et-ccd-export
     spec:
       initContainers:
         - name: init-wait-for-redis
           image: alpine
           command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 redis 6379 && exit 0 || sleep 3; done; exit 1"]
       containers:
-      - name: systems-et-ccd-export
-        image: systems-et-ccd-export
+      - name: et-ccd-export
+        image: et-ccd-export
         env:
           - name: REDIS_URL
             value: "redis://redis:6379/2"
+          - name: RAVEN_DSN
+            value: "https://0ac125aa9b0240c793e081753671c041:531ce66cc13748fbbc87e0fe66d050b3@sentry.io/1486610"
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_LOG_LEVEL
+            value: debug
+          - name: RAILS_ENV
+            value: production
+          - name: CCD_AUTH_BASE_URL
+            value: "fake-services:9100/auth"
+          - name: CCD_IDAM_BASE_URL
+            value: "fake-services:9100/idam"
+          - name: CCD_DATA_STORE_BASE_URL
+            value: "fake-services:9100/data_store"
+          - name: CCD_ECM_BASE_URL
+            value: "fake-services:9100/ecm"
+          - name: CCD_DOCUMENT_STORE_BASE_URL
+            value: "fake-services:9100/document_store"
+          - name: CCD_MICROSERVICE_ID
+            value: ccd_gw
+          - name: CCD_MICROSERVICE_SECRET
+            value: AAAAAAAAAAAAAAAC
+          - name: CCD_DOCUMENT_STORE_URL_REWRITE
+            value: 'fake-services:9100:ccd.et.127.0.0.1.nip.io:3100'
         ports:
           - name: http
             containerPort: 7433
@@ -44,11 +68,10 @@ spec:
             path: /
             port: 7433
           initialDelaySeconds: 65
-          periodSeconds: 10
+          periodSeconds: 60
         readinessProbe:
           httpGet:
             path: /
             port: 7433
           initialDelaySeconds: 70
           periodSeconds: 14
-

@@ -4,23 +4,26 @@ metadata:
   name: et-full-system-servers
 build:
   artifacts:
-  - image: systems-et1
+  - image: et1
     context: systems/et1
     docker: {}
-  - image: systems-et3
+  - image: et3
     context: systems/et3
     docker: {}
-  - image: systems-api
+  - image: api
     context: systems/api
     docker: {}
-  - image: systems-admin
+  - image: admin
     context: systems/admin
     docker: {}
-  - image: systems-atos
+  - image: atos
     context: systems/atos
     docker: {}
-  - image: systems-et-ccd-export
+  - image: et-ccd-export
     context: systems/et_ccd_export
+    docker: {}
+  - image: fake-services
+    context: support/fake_services
     docker: {}
 deploy:
   kubectl:
@@ -44,3 +47,7 @@ deploy:
     - skaffold_deploy/db-*.yaml
     - skaffold_deploy/mailhog-*.yaml
     - skaffold_deploy/redis-*.yaml
+    - skaffold_deploy/azure-storage-data-persistentvolumeclaim.yaml
+    - skaffold_deploy/azurite-deployment.yaml
+    - skaffold_deploy/fake_services_deployment.yaml
+    - skaffold_deploy/fake_services_ingress.yaml

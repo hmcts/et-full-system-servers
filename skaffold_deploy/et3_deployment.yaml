@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: systems-et3
+  name: et3
   labels:
-    app: systems-et3
+    app: et3
 spec:
   ports:
   - name: web
@@ -11,23 +11,23 @@ spec:
     protocol: TCP
   clusterIP: None
   selector:
-    app: systems-et3
+    app: et3
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: systems-et3
+  name: et3
   labels:
-    app: systems-et3
+    app: et3
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: systems-et3
+      app: et3
   template:
     metadata:
       labels:
-        app: systems-et3
+        app: et3
     spec:
       initContainers:
       - name: init-wait-for-db
@@ -38,8 +38,8 @@ spec:
             value: db
           - name: DB_PORT
             value: "5432"
-      - name: systems-et3-db-setup
-        image: systems-et3
+      - name: et3-db-setup
+        image: et3
         env:
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
@@ -64,8 +64,8 @@ spec:
         - db:create
         - db:migrate
       containers:
-      - name: systems-et3
-        image: systems-et3
+      - name: et3
+        image: et3
         ports:
             - name: http
               containerPort: 8080
@@ -103,3 +103,11 @@ spec:
             value: postgres
           - name: RAILS_SERVE_STATIC_FILES
             value: 'true'
+          - name: ROOT_URL
+            value: "http://et3.et.127.0.0.1.nip.io:3100"
+          - name: SMTP_HOSTNAME
+            value: 'mailhog'
+          - name: SMTP_PORT
+            value: "1025"
+          - name: ET_API_URL
+            value: 'http://api:8080/api/v2'

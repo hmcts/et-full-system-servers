@@ -1,16 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: et1-ingress
+  name: mailhog-ingress
 spec:
   rules:
-    - host: et1.et.127.0.0.1.nip.io
+    - host: mail.et.127.0.0.1.nip.io
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: et1
+                name: mailhog
                 port:
                   name: web
