@@ -173,7 +173,7 @@ traefik-deployment-847b9684bf-rk2pf   1/1     Running   0          2m17s
 
 ```
 
-Thats it - now go to http://et1.et.127.0.0.1.nip:3100 and you should see et1 running
+Thats it - now go to http://et1.et.127.0.0.1.nip.io:3100 and you should see et1 running
 replace 'et1' with 'et3', 'admin', 'mail', 'atos' to see the other services
 
 If you want to watch the logs as you work, run instead of the normal 'skaffold run' command
