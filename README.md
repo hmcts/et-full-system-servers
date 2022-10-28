@@ -61,7 +61,7 @@ et_full_system docker server
 First, ensure you have the following installed
 
 - Docker Desktop (minikube may also work)
-- Skaffold (https://skaffold.dev)
+- Skaffold (https://skaffold.dev) (brew install skaffold)
 - Kubectl (https://kubernetes.io/docs/tasks/tools/)
 - Lens IDE (https://k8slens.dev) (Not essential - just a GUI way of seeing what kubernetes is doing)
 
