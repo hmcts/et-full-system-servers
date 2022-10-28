@@ -29,6 +29,11 @@ panic - just run
 git submodule update --init
 ```
 
+then
+
+```bash
+cd <directory that you cloned into>
+```
 ## Running
 
 The system can be run in 2 different ways.  The 'et_full_system' tool which
