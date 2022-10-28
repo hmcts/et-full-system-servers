@@ -6,42 +6,48 @@ build:
   artifacts:
   - image: et1
     context: systems/et1
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
           dest: ./
   - image: et3
     context: systems/et3
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
           dest: ./
   - image: api
     context: systems/api
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
           dest: ./
   - image: admin
     context: systems/admin
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
           dest: ./
   - image: atos
     context: systems/atos
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
           dest: ./
   - image: et-ccd-export
     context: systems/et_ccd_export
-    docker: {}
+    docker:
+      dockerfile: Dockerfile
     sync:
       manual:
         - src: '**/*'
@@ -79,3 +85,26 @@ deploy:
     - skaffold_deploy/azurite-deployment.yaml
     - skaffold_deploy/fake_services_deployment.yaml
     - skaffold_deploy/fake_services_ingress.yaml
+profiles:
+- name: dev
+  activation:
+  - env: RAILS_ENV=development
+  patches:
+  - op: replace
+    path: /build/artifacts/0/docker/dockerfile
+    value: Dockerfile.dev
+  - op: replace
+    path: /build/artifacts/1/docker/dockerfile
+    value: Dockerfile.dev
+  - op: replace
+    path: /build/artifacts/2/docker/dockerfile
+    value: Dockerfile.dev
+  - op: replace
+    path: /build/artifacts/3/docker/dockerfile
+    value: Dockerfile.dev
+  - op: replace
+    path: /build/artifacts/4/docker/dockerfile
+    value: Dockerfile.dev
+  - op: replace
+    path: /build/artifacts/5/docker/dockerfile
+    value: Dockerfile.dev

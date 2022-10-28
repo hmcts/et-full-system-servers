@@ -49,8 +49,6 @@ spec:
             value: debug
           - name: RAVEN_DSN
             value: 'https://7f2374c2e0cd4650bf5129c9fe45215e:e0ae53d01bd7454da963790ee204ffa0@sentry.io/1376078'
-          - name: DB_NAME
-            value: et3_production
           - name: DB_HOST
             value: db
           - name: DB_PORT
@@ -93,8 +91,6 @@ spec:
             value: debug
           - name: RAVEN_DSN
             value: 'https://7f2374c2e0cd4650bf5129c9fe45215e:e0ae53d01bd7454da963790ee204ffa0@sentry.io/1376078'
-          - name: DB_NAME
-            value: et3_production
           - name: DB_HOST
             value: db
           - name: DB_PORT

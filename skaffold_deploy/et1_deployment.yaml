@@ -43,8 +43,8 @@ spec:
         env:
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-          - name: REDIS_URL
-            value: "redis://redis:6379/5"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: DB_HOST
             value: db
           - name: DB_PORT
@@ -53,6 +53,8 @@ spec:
             value: postgres
           - name: RAVEN_DSN
             value: 'https://1b78623c8bab4dfb9aeb6f5dbb31ae34:0f4a38359e7e47f99e7e69449b32ef2b@sentry.io/1355286'
+          - name: DISABLE_ADMIN
+            value: 'true'
         command:
         - bundle
         - exec
@@ -83,8 +85,8 @@ spec:
         env:
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-          - name: REDIS_URL
-            value: "redis://redis:6379/5"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: DB_HOST
             value: db
           - name: DB_PORT
@@ -117,19 +119,19 @@ spec:
           httpGet:
             path: /
             port: 7433
-          initialDelaySeconds: 65
-          periodSeconds: 10
+          initialDelaySeconds: 20
+          periodSeconds: 120
         readinessProbe:
           httpGet:
             path: /
             port: 7433
-          initialDelaySeconds: 70
-          periodSeconds: 14
+          initialDelaySeconds: 10
+          periodSeconds: 120
         env:
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
-          - name: REDIS_URL
-            value: "redis://redis:6379/5"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: DB_HOST
             value: db
           - name: DB_PORT

@@ -28,21 +28,19 @@ spec:
       initContainers:
         - name: init-wait-for-redis
           image: alpine
-          command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 redis 6379 && exit 0 || sleep 3; done; exit 1"]
+          command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 redis-service 6379 && exit 0 || sleep 3; done; exit 1"]
       containers:
       - name: et-ccd-export
         image: et-ccd-export
         env:
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: RAVEN_DSN
             value: "https://0ac125aa9b0240c793e081753671c041:531ce66cc13748fbbc87e0fe66d050b3@sentry.io/1486610"
           - name: RAILS_LOG_TO_STDOUT
             value: 'true'
           - name: RAILS_LOG_LEVEL
             value: debug
-          - name: RAILS_ENV
-            value: production
           - name: CCD_AUTH_BASE_URL
             value: "fake-services:9100/auth"
           - name: CCD_IDAM_BASE_URL
@@ -59,6 +57,8 @@ spec:
             value: AAAAAAAAAAAAAAAC
           - name: CCD_DOCUMENT_STORE_URL_REWRITE
             value: 'fake-services:9100:ccd.et.127.0.0.1.nip.io:3100'
+          - name: RAILS_MAX_THREADS
+            value: "20"
         ports:
           - name: http
             containerPort: 7433
@@ -67,11 +67,11 @@ spec:
           httpGet:
             path: /
             port: 7433
-          initialDelaySeconds: 65
+          initialDelaySeconds: 30
           periodSeconds: 60
         readinessProbe:
           httpGet:
             path: /
             port: 7433
-          initialDelaySeconds: 70
-          periodSeconds: 14
+          initialDelaySeconds: 30
+          periodSeconds: 60

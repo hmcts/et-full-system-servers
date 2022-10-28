@@ -47,9 +47,9 @@ spec:
           httpGet:
             path: /ping.json
             port: 8080
+          initialDelaySeconds: 40
+          periodSeconds: 60
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: DB_HOST
             value: db
           - name: DB_PORT
@@ -76,6 +76,4 @@ spec:
             value: 'true'
           - name: RAILS_LOG_LEVEL
             value: debug
-          - name: RAILS_ENV
-            value: production
 

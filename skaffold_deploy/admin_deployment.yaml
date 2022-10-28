@@ -41,14 +41,12 @@ spec:
       - name: admin-db-setup
         image: admin
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: DB_HOST
             value: db
           - name: DB_PORT
             value: "5432"
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
           - name: RAVEN_DSN
@@ -88,14 +86,12 @@ spec:
           timeoutSeconds: 4
           periodSeconds: 30
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: DB_HOST
             value: db
           - name: DB_PORT
             value: "5432"
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
           - name: RAVEN_DSN

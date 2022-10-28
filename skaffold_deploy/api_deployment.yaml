@@ -33,8 +33,6 @@ spec:
       - name: api-db-setup
         image: api
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: RAVEN_DSN
             value: 'https://929365547a42468fb521248a96100646:139af8327fa340b88088efeae059fca8@sentry.io/1254109'
           - name: DB_HOST
@@ -43,8 +41,8 @@ spec:
             value: "5432"
           - name: DB_USERNAME
             value: postgres
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
           - name: AZURE_STORAGE_BLOB_HOST
@@ -67,7 +65,7 @@ spec:
             value: 'true'
           - name: RAILS_LOG_LEVEL
             value: debug
-        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && nc -zvw1 redis 6379 && bundle exec rails db:create db:migrate db:seed configure_azure_storage_containers && exit 0 || sleep 3; done ;exit 1"]
+        command: ["/bin/sh", "-c", "for i in $(seq 1 300); do nc -zvw1 $DB_HOST $DB_PORT && nc -zvw1 redis-service 6379 && bundle exec rails db:create db:migrate db:seed configure_azure_storage_containers && exit 0 || sleep 3; done ;exit 1"]
       containers:
       - name: api
         image: api
@@ -79,9 +77,9 @@ spec:
           httpGet:
             path: /ping.json
             port: 8080
-          initialDelaySeconds: 40
+          initialDelaySeconds: 20
           timeoutSeconds: 10
-          periodSeconds: 60
+          periodSeconds: 120
         readinessProbe:
           httpGet:
             path: /ping.json
@@ -90,8 +88,6 @@ spec:
           timeoutSeconds: 10
           periodSeconds: 30
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: RAVEN_DSN
             value: 'https://929365547a42468fb521248a96100646:139af8327fa340b88088efeae059fca8@sentry.io/1254109'
           - name: DB_HOST
@@ -100,8 +96,8 @@ spec:
             value: "5432"
           - name: DB_USERNAME
             value: postgres
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
           - name: AZURE_STORAGE_BLOB_HOST
@@ -126,6 +122,10 @@ spec:
             value: debug
           - name: ACAS_JSON_SERVICE_URL
             value: 'http://fake-services:9000/ECCLJson'
+          - name: ACTIVE_JOB_ADAPTER
+            value: sidekiq
+          - name: RAILS_MAX_THREADS
+            value: "20"
       - name: api-sidekiq
         image: api
         ports:
@@ -137,16 +137,14 @@ spec:
             path: /
             port: 7433
           initialDelaySeconds: 65
-          periodSeconds: 10
+          periodSeconds: 60
         readinessProbe:
           httpGet:
             path: /
             port: 7433
-          initialDelaySeconds: 70
+          initialDelaySeconds: 20
           periodSeconds: 14
         env:
-          - name: DB_NAME
-            value: 'et_api_production'
           - name: RAVEN_DSN
             value: 'https://929365547a42468fb521248a96100646:139af8327fa340b88088efeae059fca8@sentry.io/1254109'
           - name: DB_HOST
@@ -155,8 +153,8 @@ spec:
             value: "5432"
           - name: DB_USERNAME
             value: postgres
-          - name: REDIS_URL
-            value: "redis://redis:6379/2"
+          - name: REDIS_HOST
+            value: "redis-service"
           - name: SECRET_KEY_BASE
             value: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
           - name: RAILS_LOG_TO_STDOUT
@@ -191,5 +189,7 @@ spec:
             value: "http://fake-services:9200"
           - name: GOVUK_NOTIFY_API_KEY_LIVE
             value: "fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d"
+          - name: RAILS_MAX_THREADS
+            value: "20"
         command:
         - "./run_sidekiq.sh"
