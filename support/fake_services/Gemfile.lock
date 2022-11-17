@@ -26,7 +26,7 @@ GEM
     addressable (2.8.1)
       public_suffix (>= 2.0.2, < 6.0)
     concurrent-ruby (1.1.10)
-    et_fake_acas_server (1.0.0)
+    et_fake_acas_server (1.1.0)
       activesupport (>= 6.1)
       iodine (~> 0.7)
       nokogiri (~> 1.8, >= 1.8.2)
@@ -44,20 +44,20 @@ GEM
     foreman (0.87.2)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    iodine (0.7.49)
+    iodine (0.7.50)
     json-schema (2.8.1)
       addressable (>= 2.4)
     jwt (2.5.0)
     mail (2.7.1)
       mini_mime (>= 0.1.1)
     mini_mime (1.1.2)
-    mini_portile2 (2.6.1)
-    minitest (5.15.0)
+    mini_portile2 (2.8.0)
+    minitest (5.16.3)
     multi_json (1.15.0)
     mustermann (2.0.2)
       ruby2_keywords (~> 0.0.1)
-    nokogiri (1.12.5)
-      mini_portile2 (~> 2.6.1)
+    nokogiri (1.13.9)
+      mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     pastel (0.8.0)
       tty-color (~> 0.5)
@@ -91,7 +91,7 @@ GEM
       pastel (~> 0.8)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
-    zeitwerk (2.6.0)
+    zeitwerk (2.6.6)
 
 PLATFORMS
   ruby
@@ -103,4 +103,4 @@ DEPENDENCIES
   gov_fake_notify!
 
 BUNDLED WITH
-   2.2.6
+   2.3.21
