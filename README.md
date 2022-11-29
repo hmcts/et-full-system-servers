@@ -60,7 +60,7 @@ et_full_system docker server
 
 First, ensure you have the following installed
 
-- Docker Desktop (minikube may also work)
+- Docker Desktop (minikube may also work) OR a remote cluster (microk8s etc..)
 - Skaffold (https://skaffold.dev) (brew install skaffold)
 - Kubectl (https://kubernetes.io/docs/tasks/tools/)
 - Lens IDE (https://k8slens.dev) (Not essential - just a GUI way of seeing what kubernetes is doing)
@@ -68,7 +68,21 @@ First, ensure you have the following installed
 NOTE: There may well be a tool for your IDE to run skaffold if you prefer
 a GUI for this.  It is well worth it for simplicity.  I use Cloud Code IDE Extension for rubymine (https://skaffold.dev/docs/install/#managed-ide)
 
-First, if you have never used kubernetes before in docker desktop, pop into
+NOTE: For remote cluster users (advanced)
+
+You must configure skaffold first of all to use an in cluster default repository
+as the system uses 'kaniko' to build the images and push them to
+a registry.  If you keep the registry inside the cluster - it can
+be insecure and fast.
+You do this using either a command line option --default-repo=<your registry>
+OR you can set a global skaffold config which is stored against the
+kubernetes context.
+You may also need to configure your kubernetes cluster to add the registry
+to its list of 'insecure' registries.
+
+-------------------------------------------
+
+If you have never used kubernetes before in docker desktop, pop into
 the preferences and you should be able to find an option to enable it.
 
 You will need to configure kubectl to connect to docker desktop.  Hopefully, this
