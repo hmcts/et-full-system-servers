@@ -1,0 +1,126 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: et-full-system-servers
+build:
+  cluster:
+    concurrency: 1
+  artifacts:
+    - image: et1
+      context: systems/et1
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: et3
+      context: systems/et3
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: api
+      context: systems/api
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: admin
+      context: systems/admin
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: atos
+      context: systems/atos
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: et-ccd-export
+      context: systems/et_ccd_export
+      kaniko:
+        dockerfile: Dockerfile
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+    - image: fake-services
+      context: support/fake_services
+      kaniko:
+        insecure: true
+        insecurePull: true
+      sync:
+        manual:
+          - src: '**/*'
+            dest: ./
+deploy:
+  kubectl:
+    manifests:
+      - skaffold_deploy/00-account.yaml
+      - skaffold_deploy/00-role.yaml
+      - skaffold_deploy/01-role-binding.yaml
+      - skaffold_deploy/02-traefik.yaml
+      - skaffold_deploy/02-traefik-services.yaml
+      - skaffold_deploy/et1_deployment.yaml
+      - skaffold_deploy/et1_ingress.yaml
+      - skaffold_deploy/et3_deployment.yaml
+      - skaffold_deploy/et3_ingress.yaml
+      - skaffold_deploy/api_deployment.yaml
+      - skaffold_deploy/api_ingress.yaml
+      - skaffold_deploy/admin_deployment.yaml
+      - skaffold_deploy/admin_ingress.yaml
+      - skaffold_deploy/atos_deployment.yaml
+      - skaffold_deploy/atos_ingress.yaml
+      - skaffold_deploy/et_ccd_export_deployment.yaml
+      - skaffold_deploy/db-*.yaml
+      - skaffold_deploy/mailhog-*.yaml
+      - skaffold_deploy/redis-*.yaml
+      - skaffold_deploy/azure-storage-data-persistentvolumeclaim.yaml
+      - skaffold_deploy/azurite-deployment.yaml
+      - skaffold_deploy/fake_services_deployment.yaml
+      - skaffold_deploy/fake_services_ingress.yaml
+profiles:
+  - name: dev
+    activation:
+      - env: RAILS_ENV=development
+    patches:
+      - op: replace
+        path: /build/artifacts/0/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /build/artifacts/1/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /build/artifacts/2/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /build/artifacts/3/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /build/artifacts/4/docker/dockerfile
+        value: Dockerfile.dev
+      - op: replace
+        path: /build/artifacts/5/docker/dockerfile
+        value: Dockerfile.dev
