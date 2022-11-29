@@ -80,6 +80,13 @@ kubernetes context.
 You may also need to configure your kubernetes cluster to add the registry
 to its list of 'insecure' registries.
 
+Finally, to use a remote cluster, add the following option to the skaffold command
+
+-f skaffold-remote.yaml
+
+which tells it to use a different config tuned for use
+with a remote cluster.
+
 -------------------------------------------
 
 If you have never used kubernetes before in docker desktop, pop into
