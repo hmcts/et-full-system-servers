@@ -1,0 +1,132 @@
+---
+  delivery_method: smtp
+  smtp_address: "localhost"
+  smtp_port: 1025
+  include_templates:
+  - id: a55e0b84-8d65-4bf4-93a7-e974e0d8d48d
+    name: et1-confirmation-email-v1-en
+    subject: "Employment tribunal: claim submitted"
+    message: |
+      Claim number: ((claim.reference))
+
+      ((primary_claimant.first_name)) ((primary_claimant.last_name))
+      
+      Thank you for submitting your claim to an employment tribunal.
+      
+      ---
+      
+      WHAT HAPPENS NEXT
+      
+      We'll contact you once we have sent your claim to the respondent and explain what happens next.
+      At present, this is taking us an average of 25 days.
+      Once we have sent them your claim, the respondent has 28 days to reply.
+      
+      ---
+      
+      SUBMISSION DETAILS
+      
+      Claim submitted:       ((submitted_date))
+      Tribunal office:       ((office.name))
+      Contact: ((office.email)), ((office.telephone))
+      
+      ---
+      
+      Please use the link below to download a copy of your claim.
+      ((link_to_pdf))
+      
+      ---
+      
+      Additional Information File
+      
+      ((link_to_additional_info))
+      
+      ---
+      
+      Group Claim File
+      
+      ((link_to_claimants_file))
+      
+      ---
+      
+      
+      
+      Your feedback helps us improve this service:
+      https://www.gov.uk/done/employment-tribunals-make-a-claim
+      
+      Help us keep track. Complete our diversity monitoring questionnaire.
+      https://employmenttribunals.service.gov.uk/en/apply/diversity
+      
+      Contact us: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
+  - id: 97a117f1-727d-4631-bbc6-b2bc98d30a0f
+    name: et1-confirmation-email-v1-cy
+    subject: "Tribiwnlys Cyflogaeth: hawliad wedi’i gyflwyno"
+    message: |
+      Eich rhif hawliad: ((claim.reference))
+
+      ((primary_claimant.first_name)) ((primary_claimant.last_name))
+      Diolch am gyflwyno eich hawliad i dribiwnlys cyflogaeth.
+      ---
+      
+      BETH SY'N DIGWYDD NESAF
+      
+      Byddwn yn cysylltu â chi unwaith y byddwn wedi anfon eich hawliad at yr atebydd i egluro beth fydd yn digwydd nesaf. Ar hyn o bryd, mae’n cymryd oddeutu 25 diwrnod.
+      Unwaith y byddwn wedi anfon eich hawliad atynt, mae gan yr atebydd 28 diwrnod i ymateb.
+      
+      ---
+      
+      MANYLION CYFLWYNO
+      
+      Hawliad wedi'i gyflwyno:      Cyflwynwyd ar ((submitted_date))
+      Swyddfa tribiwnlys:           Cymru, Tribiwnlys Cyflogaeth
+      Cyswllt: ((office.email)), 0300 303 0654
+      
+      ---     
+      
+      Defnyddiwch y ddolen isod i lawrlwytho copi o’ch hawliad.
+      ((link_to_pdf))
+      
+      ---
+      
+      Ffeil Gwybodaeth Ychwanegol
+      
+      ((link_to_additional_info))
+      
+      ---
+      
+      Hawliad Grŵp
+      
+      ((link_to_claimants_file))
+      
+      ---
+      
+      Mae eich adborth yn ein helpu i wella'r gwasanaeth hwn:
+      https://www.gov.uk/done/employment-tribunals-make-a-claim
+      
+      Helpwch ni i gadw cofnodion cywir . Llenwch ein holiadur monitro amrywiaeth.
+      https://employmenttribunals.service.gov.uk/en/apply/diversity
+      
+      Cysylltu â ni: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
+  - id: '017d71e6-498b-4d07-b77d-536b8b3f54dc'
+    name: 'et1-access-details-v1-en'
+    subject: 'Employment tribunal: complete your claim'
+    message: |
+      Claim number: ((reference))
+      You’ve started a claim to an employment tribunal. To return to your claim you’ll need your claim number (above), and memorable word.
+      Clicking on the links below will not work. Please copy and paste the URLs into your browser.
+      COMPLETE CLAIM: ((url))
+      You’ll receive a confirmation email once you’ve submitted your claim.
+      Contact us: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
+  - id: '97a117f1-727d-4631-bbc6-b2bc98d30a0f'
+    name: 'et1-access-details-v1-cy'
+    subject: 'Tribiwnlys Cyflogaeth: cwblhau eich hawliad'
+    message: |
+      Rhif yr hawliad: ((reference))
+      Rydych wedi cychwyn gwneud hawliad i dribiwnlys cyflogaeth. I ddychwelyd i'ch hawliad byddwch angen eich rhif hawliad (uchod), a'ch gair cofiadwy.
+      Ni fydd clicio ar y dolenni isod yn gweithio. Copïwch a gludwch yr URL i'ch porwr.
+      CWBLHAU EICH HAWLIAD: ((url))
+      Fe gewch neges e-bost fel cadarnhad unwaith y byddwch wedi cyflwyno'ch hawliad.
+      Cysylltwch â ni: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
+  include_api_keys:
+  - service_name: Employment Tribunals
+    service_email: employmenttribunals@email.com
+    key: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
