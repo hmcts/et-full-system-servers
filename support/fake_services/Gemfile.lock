@@ -15,9 +15,9 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (6.1.7)
-      activesupport (= 6.1.7)
-    activesupport (6.1.7)
+    activemodel (6.1.7.3)
+      activesupport (= 6.1.7.3)
+    activesupport (6.1.7.3)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -25,7 +25,7 @@ GEM
       zeitwerk (~> 2.3)
     addressable (2.8.1)
       public_suffix (>= 2.0.2, < 6.0)
-    concurrent-ruby (1.1.10)
+    concurrent-ruby (1.2.2)
     et_fake_acas_server (2.0.0)
       activesupport (>= 6.1)
       iodine (~> 0.7)
@@ -52,7 +52,7 @@ GEM
       mini_mime (>= 0.1.1)
     mini_mime (1.1.2)
     mini_portile2 (2.8.1)
-    minitest (5.16.3)
+    minitest (5.18.0)
     multi_json (1.15.0)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
@@ -89,9 +89,9 @@ GEM
     tty-color (0.6.0)
     tty-logger (0.6.0)
       pastel (~> 0.8)
-    tzinfo (2.0.5)
+    tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    zeitwerk (2.6.6)
+    zeitwerk (2.6.7)
 
 PLATFORMS
   ruby
