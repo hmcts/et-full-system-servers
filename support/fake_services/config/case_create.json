@@ -865,7 +865,7 @@
               "enum": [
                 "ET1",
                 "ACAS Certificate",
-                "Other"
+                "ET1 attachment"
               ]
             },
             "ownerDocument": {
