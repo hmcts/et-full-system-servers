@@ -100,7 +100,7 @@ spec:
           - name: RAILS_SERVE_STATIC_FILES
             value: 'true'
           - name: ROOT_URL
-            value: "http://et3.et.127.0.0.1.nip.io:3100"
+            value: "http://et3.et.192.168.0.44.nip.io:3100"
           - name: SMTP_HOSTNAME
             value: 'mailhog'
           - name: SMTP_PORT

@@ -4,7 +4,7 @@ metadata:
   name: fake-services-ingress
 spec:
   rules:
-    - host: acas.et.127.0.0.1.nip.io
+    - host: acas.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /
@@ -14,7 +14,7 @@ spec:
                 name: fake-services
                 port:
                   name: acas-web
-    - host: ccd.et.127.0.0.1.nip.io
+    - host: ccd.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /
@@ -24,7 +24,7 @@ spec:
                 name: fake-services
                 port:
                   name: ccd-web
-    - host: notify.et.127.0.0.1.nip.io
+    - host: notify.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /

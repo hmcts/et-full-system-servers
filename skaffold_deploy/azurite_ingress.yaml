@@ -4,7 +4,7 @@ metadata:
   name: azurite-ingress
 spec:
   rules:
-    - host: azure_blob_storage.et.127.0.0.1.nip.io
+    - host: azure_blob_storage.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /

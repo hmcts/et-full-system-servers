@@ -4,7 +4,7 @@ metadata:
   name: admin-ingress
 spec:
   rules:
-    - host: admin.et.127.0.0.1.nip.io
+    - host: admin.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /

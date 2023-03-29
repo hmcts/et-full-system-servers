@@ -4,7 +4,7 @@ metadata:
   name: api-ingress
 spec:
   rules:
-    - host: api.et.127.0.0.1.nip.io
+    - host: api.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /

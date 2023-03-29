@@ -21,5 +21,6 @@ spec:
   ports:
     - targetPort: web
       port: 3100
+      nodePort: 32100
   selector:
     app: traefik

@@ -4,7 +4,8 @@ metadata:
   name: et-full-system-servers
 build:
   cluster:
-    concurrency: 1
+    concurrency: 3
+    timeout: 40m
   artifacts:
     - image: et1
       context: systems/et1
@@ -124,3 +125,8 @@ profiles:
       - op: replace
         path: /build/artifacts/5/docker/dockerfile
         value: Dockerfile.dev
+portForward:
+  - resourceType: 'Service'
+    resourceName: 'traefik-web-service'
+    port: 3100
+    localPort: 3100

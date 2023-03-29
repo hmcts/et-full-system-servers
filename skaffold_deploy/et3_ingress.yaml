@@ -4,7 +4,7 @@ metadata:
   name: et3-ingress
 spec:
   rules:
-    - host: et3.et.127.0.0.1.nip.io
+    - host: et3.et.192.168.0.44.nip.io
       http:
         paths:
           - path: /

@@ -22,7 +22,7 @@ metadata:
   annotations:
     kompose.cmd: kompose convert -f docker-compose.yml
     kompose.version: 1.26.1 (HEAD)
-    traefik.http.routers.mail-router.rule: Host(`mail.et.127.0.0.1.nip.io`)
+    traefik.http.routers.mail-router.rule: Host(`mail.et.192.168.0.44.nip.io`)
     traefik.http.routers.mail-router.service: mail-service
     traefik.http.services.mail-service.loadbalancer.server.port: "8025"
   creationTimestamp: null
@@ -40,7 +40,7 @@ spec:
       annotations:
         kompose.cmd: kompose convert -f docker-compose.yml
         kompose.version: 1.26.1 (HEAD)
-        traefik.http.routers.mail-router.rule: Host(`mail.et.127.0.0.1.nip.io`)
+        traefik.http.routers.mail-router.rule: Host(`mail.et.192.168.0.44.nip.io`)
         traefik.http.routers.mail-router.service: mail-service
         traefik.http.services.mail-service.loadbalancer.server.port: "8025"
       creationTimestamp: null

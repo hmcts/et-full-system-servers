@@ -56,7 +56,7 @@ spec:
           - name: CCD_MICROSERVICE_SECRET
             value: AAAAAAAAAAAAAAAC
           - name: CCD_DOCUMENT_STORE_URL_REWRITE
-            value: 'fake-services:9100:ccd.et.127.0.0.1.nip.io:3100'
+            value: 'fake-services:9100:ccd.et.192.168.0.44.nip.io:32100'
           - name: RAILS_MAX_THREADS
             value: "20"
         ports:
