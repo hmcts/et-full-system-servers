@@ -982,6 +982,13 @@
       ],
       "pattern": "^(\\d{12})$"
     },
+    "managingOffice": {
+      "type": "string",
+      "title": "The managing office - normally provided by ccd but for test purposes we need to provide it",
+      "examples": [
+        "Bristol"
+      ]
+    },
     "claimant_TypeOfClaimant": {
       "type": "string",
       "title": "The type of claimant Schema",
