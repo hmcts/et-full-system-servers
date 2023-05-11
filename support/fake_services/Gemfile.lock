@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/hmcts/gov_fake_notify.git
-  revision: eb4e3a1825c6a4ef2d08f00689d8692de96d9c40
-  tag: v1.2.0
+  revision: 1394b8fe80e741cea6d433adf508aa3855f5c53a
+  tag: v1.2.1
   specs:
-    gov_fake_notify (1.2.0)
+    gov_fake_notify (1.2.1)
       activemodel (>= 6.1)
       iodine (~> 0.7)
       jwt (~> 2.2, >= 2.2.3)
