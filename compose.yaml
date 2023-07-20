@@ -1,0 +1,296 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker compose reference guide at
+# https://docs.docker.com/compose/compose-file/
+
+# Here the instructions define your application as a service called "app".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  traefik:
+    # The official v2 Traefik docker image
+    image: traefik:v2.5
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200
+    ports:
+      - "3100:3100"
+      # The Web UI (enabled by --api.insecure=true)
+      - "3200:3200"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://et.127.0.0.1.nip.io/3100 || exit 1
+      interval: 10s
+      timeout: 1s
+      retries: 3
+      start_period: 10s
+    networks:
+      et_full_system:
+        aliases:
+          - azure_blob_storage.et.127.0.0.1.nip.io
+          - notify.et.127.0.0.1.nip.io
+          - api.et.127.0.0.1.nip.io
+          - admin.et.127.0.0.1.nip.io
+          - et1.et.127.0.0.1.nip.io
+          - et3.et.127.0.0.1.nip.io
+          - azur.et.127.0.0.1.nip.io
+          - atos.et.127.0.0.1.nip.io
+          - ccd.et.127.0.0.1.nip.io
+          - acas.et.127.0.0.1.nip.io
+
+  et1:
+    build:
+      context: systems/et1
+      dockerfile: Dockerfile
+    command: /home/app/et1/bin/run_full_system
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USERNAME: postgres
+      DB_NAME: etdb
+      DISABLE_SIDEKIQ_ALIVE: 'true'
+      ET_API_URL: http://api.et.127.0.0.1.nip.io:3100/api/v2
+      GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
+      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: 'true'
+      RAILS_LOG_LEVEL: debug
+      RAILS_SERVE_STATIC_FILES: 'true'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 5
+      ROOT_URL: http://et1.et.127.0.0.1.nip.io:3100
+      SECRET_KEY_BASE: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+      SECURE_SESSION_COOKIE: 'false'
+      SENDING_HOST: et1.et.127.0.0.1.nip.io
+      SERVICE_NOW_EMAIL: fake@servicenow.fake.com
+      SMTP_HOSTNAME: mailhog
+      SMTP_PORT: 1025
+    labels:
+      - traefik.http.routers.et1-router.rule=Host(`et1.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.et1-router.service=et1-service
+      - traefik.http.services.et1-service.loadbalancer.server.port=8080
+    networks:
+      - et_full_system
+  et3:
+    build:
+      context: systems/et3
+      dockerfile: Dockerfile
+    command: /home/app/et3/bin/run_full_system
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USERNAME: postgres
+      DB_NAME: et3_production
+      ET_API_URL: http://api.et.127.0.0.1.nip.io:3100/api/v2
+      GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
+      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: 'true'
+      RAILS_LOG_LEVEL: debug
+      RAILS_SERVE_STATIC_FILES: 'true'
+      ROOT_URL: http://et3.et.127.0.0.1.nip.io:3100
+      SECRET_KEY_BASE: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+      SMTP_HOSTNAME: mailhog
+      SMTP_PORT: 1025
+    labels:
+      - traefik.http.routers.et3-router.rule=Host(`et3.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.et3-router.service=et3-service
+      - traefik.http.services.et3-service.loadbalancer.server.port=8080
+    networks:
+      - et_full_system
+  api:
+    build:
+      context: systems/api
+      dockerfile: Dockerfile
+    command: /home/app/api/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ACAS_JSON_SERVICE_URL: http://acas.et.127.0.0.1.nip.io:3100/ECCLJson
+      AZURE_STORAGE_BLOB_HOST: http://azure_blob_storage.et.127.0.0.1.nip.io:3100
+      AZURE_STORAGE_BLOB_FORCE_PATH_STYLE: 'true'
+      AZURE_STORAGE_ACCOUNT: devstoreaccount1
+      AZURE_STORAGE_ACCESS_KEY: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+      AZURE_STORAGE_CONTAINER: et-api-test-container
+      AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT: devstoreaccount1
+      AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+      AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER: et-api-direct-test-container
+      DB_HOST: db
+      DB_NAME: et_api_production
+      DB_USERNAME: postgres
+      DISABLE_SIDEKIQ_ALIVE: 'true'
+      GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
+      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: 'true'
+      RAILS_LOG_LEVEL: debug
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 2
+      SECRET_KEY_BASE: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+      SMTP_HOSTNAME: mailhog
+      SMTP_PORT: 1025
+    labels:
+      - traefik.http.routers.api-router.rule=Host(`api.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.api-router.service=api-service
+      - traefik.http.services.api-service.loadbalancer.server.port=8080
+    networks:
+      - et_full_system
+  admin:
+    build:
+      context: systems/admin
+      dockerfile: Dockerfile
+    command: /home/app/admin/bin/run_full_system
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      AZURE_STORAGE_BLOB_HOST: http://azure_blob_storage.et.127.0.0.1.nip.io:3100
+      AZURE_STORAGE_BLOB_FORCE_PATH_STYLE: 'true'
+      AZURE_STORAGE_ACCOUNT: devstoreaccount1
+      AZURE_STORAGE_ACCESS_KEY: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+      AZURE_STORAGE_CONTAINER: et-api-test-container
+      AZURE_STORAGE_DIRECT_UPLOAD_ACCOUNT: devstoreaccount1
+      AZURE_STORAGE_DIRECT_UPLOAD_ACCESS_KEY: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=='
+      AZURE_STORAGE_DIRECT_UPLOAD_CONTAINER: et-api-direct-test-container
+      DB_HOST: db
+      DB_NAME: et_api_production
+      DB_USERNAME: postgres
+      ET_API_URL: http://api.et.127.0.0.1.nip.io:3100/api
+      ACAS_API_URL: http://api.et.127.0.0.1.nip.io:3100/et_acas_api
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: 'true'
+      RAILS_LOG_LEVEL: debug
+      RAILS_SERVE_STATIC_FILES: 'true'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 2
+      SECRET_KEY_BASE: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+      SEED_EXAMPLE_USERS: 'true'
+    labels:
+      - traefik.http.routers.admin-router.rule=Host(`admin.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.admin-router.service=admin-service
+      - traefik.http.services.admin-service.loadbalancer.server.port=8080
+    networks:
+      - et_full_system
+  et_ccd_export:
+    build:
+      context: systems/et_ccd_export
+      dockerfile: Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      CCD_AUTH_BASE_URL: http://ccd.et.127.0.0.1.nip.io:3100/auth
+      CCD_IDAM_BASE_URL: http://ccd.et.127.0.0.1.nip.io:3100/idam
+      CCD_DATA_STORE_BASE_URL: http://ccd.et.127.0.0.1.nip.io:3100/data_store
+      CCD_ECM_BASE_URL: http://ccd.et.127.0.0.1.nip.io:3100/ecm
+      CCD_DOCUMENT_STORE_BASE_URL: http://ccd.et.127.0.0.1.nip.io:3100/document_store
+      CCD_USE_SIDAM: 'true'
+      CCD_MICROSERVICE_ID: ccd_gw
+      CCD_MICROSERVICE_SECRET: AAAAAAAAAAAAAAAC
+      CCD_GENERATE_ETHOS_CASE_REFERENCE: 'false'
+      CCD_DOCUMENT_STORE_URL_REWRITE: 'false'
+      DISABLE_SIDEKIQ_ALIVE: 'true'
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: 'true'
+      RAILS_LOG_LEVEL: debug
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 2
+      SECRET_KEY_BASE: sdlkjewfkjhfviuhduihenrjk435r89esfd7cv983qh2n4r3q27yh4u5rtfg
+    networks:
+      - et_full_system
+  db:
+    image: postgres:11
+    restart: always
+    user: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - et_full_system
+  redis:
+    image: redis:4.0
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+    networks:
+      - et_full_system
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    labels:
+      - traefik.http.routers.mail-router.rule=Host(`mail.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.mail-router.service=mail-service
+      - traefik.http.services.mail-service.loadbalancer.server.port=8025
+    environment:
+      MH_API_BIND_ADDR: 0.0.0.0:8025
+      MH_SMTP_BIND_ADDR: 0.0.0.0:1025
+      MH_UI_BIND_ADDR: 0.0.0.0:8025
+    networks:
+      - et_full_system
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    labels:
+      - traefik.http.routers.azurite-router.rule=Host(`azure_blob_storage.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.azurite-router.service=azurite-service
+      - traefik.http.services.azurite-service.loadbalancer.server.port=10000
+    command: azurite-blob --blobHost 0.0.0.0 --disableProductStyleUrl -l /data
+    volumes:
+      - azure_storage_data:/data
+    networks:
+      - et_full_system
+  fake-services:
+    build:
+      context: support/fake_services
+      dockerfile: Dockerfile
+    labels:
+      - traefik.http.routers.acas-router.rule=Host(`acas.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.acas-router.service=acas-service
+      - traefik.http.services.acas-service.loadbalancer.server.port=9000
+      - traefik.http.routers.ccd-router.rule=Host(`ccd.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.ccd-router.service=ccd-service
+      - traefik.http.services.ccd-service.loadbalancer.server.port=9100
+      - traefik.http.routers.notify-router.rule=Host(`notify.et.127.0.0.1.nip.io`)
+      - traefik.http.routers.notify-router.service=notify-service
+      - traefik.http.services.notify-service.loadbalancer.server.port=9200
+    environment:
+      GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
+      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+    networks:
+      - et_full_system
+volumes:
+  db-data:
+  azure_storage_data:
+networks:
+  et_full_system:
