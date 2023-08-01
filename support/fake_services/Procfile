@@ -1,3 +1,4 @@
 fake_acas_web: ./bin/et_fake_acas_server -port $PORT -threads=1 -workers=2
 fake_ccd_web: ./bin/et_fake_ccd start --port=$PORT --create_case_schema=./config/case_create.json
 fake_notify_web: /bin/bash -c "source ./environment_variables/fake_notify.env && ./bin/gov_fake_notify start --port=$PORT --config=./config/gov_fake_notify.yaml"
+azurite: yarn run azurite-blob --blobHost 0.0.0.0 --blobPort $PORT --disableProductStyleUrl -l /home/app/fake_services/azurite_data

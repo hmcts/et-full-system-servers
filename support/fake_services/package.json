@@ -1,0 +1,10 @@
+{
+  "name": "fake_services",
+  "version": "1.0.0",
+  "description": "ET Fake services",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "azurite": "^3.24.0"
+  }
+}
