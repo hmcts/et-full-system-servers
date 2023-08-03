@@ -1,3 +1,4 @@
+version: "3.8"
 # Comments are provided throughout this file to help you get started.
 # If you need more help, visit the Docker compose reference guide at
 # https://docs.docker.com/compose/compose-file/
@@ -12,7 +13,7 @@ services:
     # The official v2 Traefik docker image
     image: traefik:v2.5
     # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200
+    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200 --ping
     ports:
       - "3100:3100"
       # The Web UI (enabled by --api.insecure=true)
@@ -21,10 +22,10 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: wget --quiet --tries=1 --spider http://et.127.0.0.1.nip.io/3100 || exit 1
-      interval: 10s
+      test: wget --quiet --tries=1 --spider http://localhost:3200/ping || exit 1
+      interval: 5s
       timeout: 1s
-      retries: 3
+      retries: 10
       start_period: 10s
     networks:
       et_full_system:
@@ -45,6 +46,12 @@ services:
       context: systems/et1
       dockerfile: Dockerfile.development
     command: /home/app/et1/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/apply/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     volumes:
       - ./systems/et1/app:/home/app/et1/app:ro
       - ./systems/et1/bin:/home/app/et1/bin:ro
@@ -52,6 +59,7 @@ services:
       - ./systems/et1/lib:/home/app/et1/lib:ro
       - ./systems/et1/spec:/home/app/et1/spec:ro
       - ./systems/et1/vendor/assets:/home/app/et1/vendor/assets:ro
+      - et1-bundle:/home/app/et1/vendor/bundle
       - ./systems/et1/Gemfile:/home/app/et1/Gemfile:ro
       - ./systems/et1/Gemfile.lock:/home/app/et1/Gemfile.lock:ro
       - ./systems/et1/package.json:/home/app/et1/package.json:ro
@@ -75,12 +83,19 @@ services:
       context: systems/et3
       dockerfile: Dockerfile.development
     command: /home/app/et3/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     volumes:
       - ./systems/et3/app:/home/app/et3/app:ro
       - ./systems/et3/bin:/home/app/et3/bin:ro
       - ./systems/et3/config:/home/app/et3/config:ro
       - ./systems/et3/lib:/home/app/et3/lib:ro
       - ./systems/et3/spec:/home/app/et3/spec:ro
+      - et3-bundle:/home/app/et3/vendor/bundle
       - ./systems/et3/Gemfile:/home/app/et3/Gemfile:ro
       - ./systems/et3/Gemfile.lock:/home/app/et3/Gemfile.lock:ro
       - ./systems/et3/package.json:/home/app/et3/package.json:ro
@@ -111,18 +126,21 @@ services:
       - ./systems/api/spec:/home/app/api/spec:ro
       - ./systems/api/vendor/assets:/home/app/api/vendor/assets:ro
       - ./systems/api/vendor/gems:/home/app/api/vendor/gems:ro
+      - api-bundle:/home/app/api/vendor/bundle
       - ./systems/api/Gemfile:/home/app/api/Gemfile:ro
       - ./systems/api/Gemfile.lock:/home/app/api/Gemfile.lock:ro
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
-      interval: 10s
-      timeout: 30s
-      retries: 10
+      interval: 5s
+      timeout: 10s
+      retries: 20
       start_period: 40s
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      azurite:
         condition: service_healthy
     env_file:
       - systems/api/.env.full_system.common
@@ -143,11 +161,15 @@ services:
       - ./systems/admin/bin:/home/app/admin/bin:ro
       - ./systems/admin/config:/home/app/admin/config:ro
       - ./systems/admin/lib:/home/app/admin/lib:ro
-      - admin-bundle:/home/app/admin/vendor/bundle:ro
+      - admin-bundle:/home/app/admin/vendor/bundle
       - ./systems/admin/Gemfile:/home/app/admin/Gemfile:ro
       - ./systems/admin/Gemfile.lock:/home/app/admin/Gemfile.lock:ro
-      - ./systems/admin/package.json:/home/app/admin/package.json:ro
-      - ./systems/admin/yarn.lock:/home/app/admin/yarn.lock:ro
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -175,9 +197,15 @@ services:
       - ./systems/et_ccd_export/config:/home/app/ccd-export/config:ro
       - ./systems/et_ccd_export/lib:/home/app/ccd-export/lib:ro
       - ./systems/et_ccd_export/spec:/home/app/ccd-export/spec:ro
-      - et-ccd-export-bundle:/home/app/ccd-export/vendor/bundle:ro
+      - et-ccd-export-bundle:/home/app/ccd-export/vendor/bundle
       - ./systems/et_ccd_export/Gemfile:/home/app/ccd-export/Gemfile:ro
       - ./systems/et_ccd_export/Gemfile.lock:/home/app/ccd-export/Gemfile.lock:ro
+    healthcheck:
+      test: ["CMD", "bundle", "exec", "sidekiqmon", "processes"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       redis:
         condition: service_healthy
@@ -200,9 +228,9 @@ services:
       - "${DB_PORT-5432}:5432"
     healthcheck:
       test: [ "CMD", "pg_isready" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 2s
+      retries: 15
     networks:
       - et_full_system
   redis:
@@ -210,12 +238,21 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 2s
+      retries: 10
     networks:
       - et_full_system
     ports:
       - "${REDIS_PORT-6379}:6379"
   mailhog:
     image: mailhog/mailhog:v1.0.1
+    entrypoint: ["/bin/sh", "-c", "MailHog &>/dev/null"]
+    healthcheck:
+      test: nc 127.0.0.1 8025 -z
+      interval: 10s
+      timeout: 30s
+      retries: 10
     labels:
       - traefik.http.routers.mail-router.rule=Host(`mail.et.127.0.0.1.nip.io`)
       - traefik.http.routers.mail-router.service=mail-service
@@ -233,6 +270,10 @@ services:
       - traefik.http.routers.azurite-router.service=azurite-service
       - traefik.http.services.azurite-service.loadbalancer.server.port=10000
     command: azurite-blob --blobHost 0.0.0.0 --disableProductStyleUrl -l /data
+    healthcheck:
+      test: nc 127.0.0.1 10000 -z
+      interval: 2s
+      retries: 20
     volumes:
       - azure_storage_data:/data
     networks:
@@ -241,6 +282,10 @@ services:
     build:
       context: support/fake_services
       dockerfile: Dockerfile
+    healthcheck:
+      test: nc 127.0.0.1 9000 -z && nc 127.0.0.1 9100 -z && nc 127.0.0.1 9200 -z
+      interval: 2s
+      retries: 20
     labels:
       - traefik.http.routers.acas-router.rule=Host(`acas.et.127.0.0.1.nip.io`)
       - traefik.http.routers.acas-router.service=acas-service
@@ -256,10 +301,47 @@ services:
       GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
     networks:
       - et_full_system
+  finished-development:
+    image: bash
+    depends_on:
+      et1-development:
+        condition: service_healthy
+      et3-development:
+        condition: service_healthy
+      api-development:
+        condition: service_healthy
+      admin-development:
+        condition: service_healthy
+      et-ccd-export-development:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+      fake-services:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      traefik:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: -c "
+      echo '******************************************************************' &&
+      echo '*                                                                *' &&
+      echo '*         All services are now ready for use                     *' &&
+      echo '*                                                                *' &&
+      echo '******************************************************************'
+      "
+    labels:
+      - traefik.enabled=false
 volumes:
   db-data:
   azure_storage_data:
+  et1-bundle:
+  et3-bundle:
   admin-bundle:
+  api-bundle:
   et-ccd-export-bundle:
 networks:
   et_full_system:
