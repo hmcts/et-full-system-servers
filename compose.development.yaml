@@ -51,7 +51,7 @@ services:
       - ./systems/et1/config:/home/app/et1/config:ro
       - ./systems/et1/lib:/home/app/et1/lib:ro
       - ./systems/et1/spec:/home/app/et1/spec:ro
-      - ./systems/et1/vendor:/home/app/et1/vendor:ro
+      - ./systems/et1/vendor/assets:/home/app/et1/vendor/assets:ro
       - ./systems/et1/Gemfile:/home/app/et1/Gemfile:ro
       - ./systems/et1/Gemfile.lock:/home/app/et1/Gemfile.lock:ro
       - ./systems/et1/package.json:/home/app/et1/package.json:ro
@@ -81,7 +81,6 @@ services:
       - ./systems/et3/config:/home/app/et3/config:ro
       - ./systems/et3/lib:/home/app/et3/lib:ro
       - ./systems/et3/spec:/home/app/et3/spec:ro
-      - ./systems/et3/vendor:/home/app/et3/vendor:ro
       - ./systems/et3/Gemfile:/home/app/et3/Gemfile:ro
       - ./systems/et3/Gemfile.lock:/home/app/et3/Gemfile.lock:ro
       - ./systems/et3/package.json:/home/app/et3/package.json:ro
@@ -110,7 +109,8 @@ services:
       - ./systems/api/lib:/home/app/api/lib:ro
       - ./systems/api/public:/home/app/api/public:ro
       - ./systems/api/spec:/home/app/api/spec:ro
-      - ./systems/api/vendor:/home/app/api/vendor:ro
+      - ./systems/api/vendor/assets:/home/app/api/vendor/assets:ro
+      - ./systems/api/vendor/gems:/home/app/api/vendor/gems:ro
       - ./systems/api/Gemfile:/home/app/api/Gemfile:ro
       - ./systems/api/Gemfile.lock:/home/app/api/Gemfile.lock:ro
     healthcheck:
@@ -143,7 +143,7 @@ services:
       - ./systems/admin/bin:/home/app/admin/bin:ro
       - ./systems/admin/config:/home/app/admin/config:ro
       - ./systems/admin/lib:/home/app/admin/lib:ro
-      - ./systems/admin/vendor:/home/app/admin/vendor:ro
+      - admin-bundle:/home/app/admin/vendor/bundle:ro
       - ./systems/admin/Gemfile:/home/app/admin/Gemfile:ro
       - ./systems/admin/Gemfile.lock:/home/app/admin/Gemfile.lock:ro
       - ./systems/admin/package.json:/home/app/admin/package.json:ro
@@ -175,7 +175,7 @@ services:
       - ./systems/et_ccd_export/config:/home/app/ccd-export/config:ro
       - ./systems/et_ccd_export/lib:/home/app/ccd-export/lib:ro
       - ./systems/et_ccd_export/spec:/home/app/ccd-export/spec:ro
-      - ./systems/et_ccd_export/vendor:/home/app/ccd-export/vendor:ro
+      - et-ccd-export-bundle:/home/app/ccd-export/vendor/bundle:ro
       - ./systems/et_ccd_export/Gemfile:/home/app/ccd-export/Gemfile:ro
       - ./systems/et_ccd_export/Gemfile.lock:/home/app/ccd-export/Gemfile.lock:ro
     depends_on:
@@ -259,5 +259,7 @@ services:
 volumes:
   db-data:
   azure_storage_data:
+  admin-bundle:
+  et-ccd-export-bundle:
 networks:
   et_full_system:

@@ -1,3 +1,4 @@
+version: "3.8"
 # Comments are provided throughout this file to help you get started.
 # If you need more help, visit the Docker compose reference guide at
 # https://docs.docker.com/compose/compose-file/
@@ -12,7 +13,7 @@ services:
     # The official v2 Traefik docker image
     image: traefik:v2.5
     # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200
+    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200 --ping
     ports:
       - "3100:3100"
       # The Web UI (enabled by --api.insecure=true)
@@ -21,10 +22,10 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: wget --quiet --tries=1 --spider http://et.127.0.0.1.nip.io/3100 || exit 1
-      interval: 10s
+      test: wget --quiet --tries=1 --spider http://localhost:3200/ping || exit 1
+      interval: 5s
       timeout: 1s
-      retries: 3
+      retries: 10
       start_period: 10s
     networks:
       et_full_system:
@@ -45,6 +46,12 @@ services:
       context: systems/et1
       dockerfile: Dockerfile.production
     command: /home/app/et1/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/apply/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -64,6 +71,12 @@ services:
       context: systems/et3
       dockerfile: Dockerfile.production
     command: /home/app/et3/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -83,14 +96,16 @@ services:
     command: /home/app/api/bin/run_full_system
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
-      interval: 10s
-      timeout: 30s
-      retries: 10
+      interval: 5s
+      timeout: 10s
+      retries: 20
       start_period: 40s
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      azurite:
         condition: service_healthy
     env_file:
       - systems/api/.env.full_system.common
@@ -106,6 +121,12 @@ services:
       context: systems/admin
       dockerfile: Dockerfile.production
     command: /home/app/admin/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -127,6 +148,12 @@ services:
       context: systems/et_ccd_export
       dockerfile: Dockerfile.production
     command: /home/app/ccd-export/bin/run_full_system
+    healthcheck:
+      test: ["CMD", "bundle", "exec", "sidekiqmon", "processes"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
     depends_on:
       redis:
         condition: service_healthy
@@ -147,9 +174,9 @@ services:
       - 5432
     healthcheck:
       test: [ "CMD", "pg_isready" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 2s
+      retries: 15
     networks:
       - et_full_system
   redis:
@@ -157,10 +184,19 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 2s
+      retries: 10
     networks:
       - et_full_system
   mailhog:
     image: mailhog/mailhog:v1.0.1
+    entrypoint: ["/bin/sh", "-c", "MailHog &>/dev/null"]
+    healthcheck:
+      test: nc 127.0.0.1 8025 -z
+      interval: 10s
+      timeout: 30s
+      retries: 10
     labels:
       - traefik.http.routers.mail-router.rule=Host(`mail.et.127.0.0.1.nip.io`)
       - traefik.http.routers.mail-router.service=mail-service
@@ -178,6 +214,10 @@ services:
       - traefik.http.routers.azurite-router.service=azurite-service
       - traefik.http.services.azurite-service.loadbalancer.server.port=10000
     command: azurite-blob --blobHost 0.0.0.0 --disableProductStyleUrl -l /data
+    healthcheck:
+      test: nc 127.0.0.1 10000 -z
+      interval: 2s
+      retries: 20
     volumes:
       - azure_storage_data:/data
     networks:
@@ -186,6 +226,10 @@ services:
     build:
       context: support/fake_services
       dockerfile: Dockerfile
+    healthcheck:
+      test: nc 127.0.0.1 9000 -z && nc 127.0.0.1 9100 -z && nc 127.0.0.1 9200 -z
+      interval: 2s
+      retries: 20
     labels:
       - traefik.http.routers.acas-router.rule=Host(`acas.et.127.0.0.1.nip.io`)
       - traefik.http.routers.acas-router.service=acas-service
@@ -201,6 +245,40 @@ services:
       GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
     networks:
       - et_full_system
+  finished:
+    image: bash
+    depends_on:
+      et1:
+        condition: service_healthy
+      et3:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+      et-ccd-export:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+      fake-services:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      traefik:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: -c "
+      echo '******************************************************************' &&
+      echo '*                                                                *' &&
+      echo '*         All services are now ready for use                     *' &&
+      echo '*                                                                *' &&
+      echo '******************************************************************'
+      "
+    labels:
+      - traefik.enabled=false
 volumes:
   db-data:
   azure_storage_data:
