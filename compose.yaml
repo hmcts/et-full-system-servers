@@ -44,7 +44,7 @@ services:
   et1:
     build:
       context: systems/et1
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     command: /home/app/et1/bin/run_full_system
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/apply/ping.json"]
@@ -69,7 +69,7 @@ services:
   et3:
     build:
       context: systems/et3
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     command: /home/app/et3/bin/run_full_system
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
@@ -92,7 +92,7 @@ services:
   api:
     build:
       context: systems/api
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     command: /home/app/api/bin/run_full_system
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
@@ -119,7 +119,7 @@ services:
   admin:
     build:
       context: systems/admin
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     command: /home/app/admin/bin/run_full_system
     healthcheck:
       test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
@@ -146,7 +146,7 @@ services:
   et-ccd-export:
     build:
       context: systems/et_ccd_export
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile
     command: /home/app/ccd-export/bin/run_full_system
     healthcheck:
       test: ["CMD", "bundle", "exec", "sidekiqmon", "processes"]
