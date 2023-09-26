@@ -80,7 +80,7 @@ et-full-system-servers-finished-development-1 exited with code 0
 
 ```
 
-Note that after this, you will start to see 'ping.json' requests which docker uses
+Note that after this, you will start to see '/health' requests which docker uses
 for health checks, so if you weren't watching carefully, you might need to scroll up a bit.
 
 #### Stopping
@@ -110,7 +110,7 @@ and then restart as normal.
 
 If you need to go further and scrap the images as well, you can use
 
-```bash 
+```bash
 docker compose down -v --rmi all
 ```
 

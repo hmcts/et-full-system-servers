@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile.development
     command: /home/app/et1/bin/run_full_system
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/apply/ping.json"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -84,7 +84,7 @@ services:
       dockerfile: Dockerfile.development
     command: /home/app/et3/bin/run_full_system
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -130,7 +130,7 @@ services:
       - ./systems/api/Gemfile:/home/app/api/Gemfile:ro
       - ./systems/api/Gemfile.lock:/home/app/api/Gemfile.lock:ro
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -165,7 +165,7 @@ services:
       - ./systems/admin/Gemfile:/home/app/admin/Gemfile:ro
       - ./systems/admin/Gemfile.lock:/home/app/admin/Gemfile.lock:ro
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/ping.json"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
