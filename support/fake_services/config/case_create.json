@@ -48,7 +48,6 @@
         "claimant_title1",
         "claimant_first_names",
         "claimant_last_name",
-        "claimant_date_of_birth",
         "claimant_gender"
       ],
       "properties": {
@@ -85,14 +84,22 @@
           "pattern": "^(.*)$"
         },
         "claimant_date_of_birth": {
-          "$id": "#/properties/data/properties/claimantIndType/properties/claimant_date_of_birth",
-          "type": "string",
-          "title": "The Claimant_date_of_birth Schema",
-          "default": "",
-          "examples": [
-            "1982-11-21"
-          ],
-          "pattern": "^(.*)$"
+          "oneOf": [
+            {
+              "$id": "#/properties/data/properties/claimantIndType/properties/claimant_date_of_birth",
+              "type": "string",
+              "title": "The Claimant_date_of_birth Schema",
+              "default": "",
+              "examples": [
+                "1982-11-21"
+              ],
+              "pattern": "^(.*)$"
+            },
+            {
+              "$id": "#/properties/data/properties/claimantIndType/properties/claimant_date_of_birth",
+              "type": "null"
+            }
+          ]
         },
         "claimant_gender": {
           "oneOf": [
