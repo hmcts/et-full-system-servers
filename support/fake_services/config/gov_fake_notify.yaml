@@ -126,6 +126,51 @@
       CWBLHAU EICH HAWLIAD: ((url))
       Fe gewch neges e-bost fel cadarnhad unwaith y byddwch wedi cyflwyno'ch hawliad.
       Cysylltwch â ni: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
+  - id: '169d5f7b-edf3-488b-a2b9-39fdc9062405'
+    name: 'et3-confirmation-email-v2-en'
+    subject: 'Your Response to Employment Tribunal claim online form receipt'
+    message: |
+      Thank you for your submission. It has been forwarded to the ((office.name)) office which will contact you in due course.
+
+      ^ Office address: ((office.address ))
+      ^ Telephone: ((office.telephone))
+
+      ---
+
+      This is your reference number: ((response.reference)) which should be quoted on all correspondence.
+
+      Submission date: ((submitted_date))
+
+      Our national enquiry line can be contacted on:
+
+      ^ England and Wales: 0300 123 1024
+      ^ Scotland: 0141 354 8574
+      ^ Minicom/Textphone: 01509 221564
+
+      They can also provide general procedural information about the employment tribunals.
+  - id: 'd7aba71c-194b-4e5a-a996-9314eaf18c8d'
+    name: 'et3-confirmation-email-v2-cy'
+    subject: 'E-bost yn cadarnhau bod eich ymateb i’r hawliad Tribiwnlys Cyflogaeth ar-lein wedi cyrraedd'
+    message: |
+      Diolch am gyflwyno eich ymateb. Mae wedi cael ei anfon i’r swyddfa ym ((office.name)) a byddant yn cysylltu â chi maes o law.
+
+      ^ Cyfeiriad y swyddfa: ((office.address ))
+      ^ Rhif ffôn: ((office.telephone))
+
+      ---
+
+      Eich cyfeirnod yw: ((response.reference)) Dylech ei ddyfynnu ar bob gohebiaeth.
+
+      Dyddiad cyflwyno: ((submitted_date))
+
+      Gallwch ffonio ein llinell ymholiadau cenedlaethol ar:
+
+      ^ Rhif ffôn i siaradwyr Cymraeg: 0300 303 517
+      ^ Rhif ffôn ar gyfer ymholiadau yn Saesneg: 0300 123 1024
+      ^ Yr Alban: 0141 354 8574
+      ^ Minicom/Ffôn Testun: 01509 221564
+
+      Gallant hefyd roi gwybodaeth gyffredinol i chi ynglŷn â phrosesaur tribiwnlys cyflogaeth.
   include_api_keys:
   - service_name: Employment Tribunals
     service_email: employmenttribunals@email.com
