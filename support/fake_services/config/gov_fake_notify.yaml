@@ -132,7 +132,7 @@
     message: |
       Thank you for your submission. It has been forwarded to the ((office.name)) office which will contact you in due course.
 
-      ^ Office address: ((office.address ))
+      ^ Office address: ((office.address))
       ^ Telephone: ((office.telephone))
 
       ---
@@ -154,7 +154,7 @@
     message: |
       Diolch am gyflwyno eich ymateb. Mae wedi cael ei anfon i’r swyddfa ym ((office.name)) a byddant yn cysylltu â chi maes o law.
 
-      ^ Cyfeiriad y swyddfa: ((office.address ))
+      ^ Cyfeiriad y swyddfa: ((office.address))
       ^ Rhif ffôn: ((office.telephone))
 
       ---
