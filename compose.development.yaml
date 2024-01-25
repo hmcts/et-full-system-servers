@@ -46,12 +46,6 @@ services:
       context: systems/et1
       dockerfile: Dockerfile.development
     command: /home/app/et1/bin/run_full_system
-    healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
     volumes:
       - ./systems/et1/app:/home/app/et1/app:ro
       - ./systems/et1/bin:/home/app/et1/bin:ro
@@ -59,7 +53,7 @@ services:
       - ./systems/et1/lib:/home/app/et1/lib:ro
       - ./systems/et1/spec:/home/app/et1/spec:ro
       - ./systems/et1/vendor/assets:/home/app/et1/vendor/assets:ro
-      - et1-bundle:/home/app/et1/vendor/bundle
+      - et1-development-bundle:/home/app/et1/vendor/bundle
       - ./systems/et1/Gemfile:/home/app/et1/Gemfile:ro
       - ./systems/et1/Gemfile.lock:/home/app/et1/Gemfile.lock:ro
       - ./systems/et1/package.json:/home/app/et1/package.json:ro
@@ -76,6 +70,7 @@ services:
       - traefik.http.routers.et1-router.rule=Host(`et1.et.127.0.0.1.nip.io`)
       - traefik.http.routers.et1-router.service=et1-service
       - traefik.http.services.et1-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/et1
     networks:
       - et_full_system
   et3-development:
@@ -83,19 +78,13 @@ services:
       context: systems/et3
       dockerfile: Dockerfile.development
     command: /home/app/et3/bin/run_full_system
-    healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
     volumes:
       - ./systems/et3/app:/home/app/et3/app:ro
       - ./systems/et3/bin:/home/app/et3/bin:ro
       - ./systems/et3/config:/home/app/et3/config:ro
       - ./systems/et3/lib:/home/app/et3/lib:ro
       - ./systems/et3/spec:/home/app/et3/spec:ro
-      - et3-bundle:/home/app/et3/vendor/bundle
+      - et3-development-bundle:/home/app/et3/vendor/bundle
       - ./systems/et3/Gemfile:/home/app/et3/Gemfile:ro
       - ./systems/et3/Gemfile.lock:/home/app/et3/Gemfile.lock:ro
       - ./systems/et3/package.json:/home/app/et3/package.json:ro
@@ -110,6 +99,7 @@ services:
       - traefik.http.routers.et3-router.rule=Host(`et3.et.127.0.0.1.nip.io`)
       - traefik.http.routers.et3-router.service=et3-service
       - traefik.http.services.et3-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/et3
     networks:
       - et_full_system
   api-development:
@@ -126,15 +116,9 @@ services:
       - ./systems/api/spec:/home/app/api/spec:ro
       - ./systems/api/vendor/assets:/home/app/api/vendor/assets:ro
       - ./systems/api/vendor/gems:/home/app/api/vendor/gems:ro
-      - api-bundle:/home/app/api/vendor/bundle
+      - api-development-bundle:/home/app/api/vendor/bundle
       - ./systems/api/Gemfile:/home/app/api/Gemfile:ro
       - ./systems/api/Gemfile.lock:/home/app/api/Gemfile.lock:ro
-    healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -149,6 +133,7 @@ services:
       - traefik.http.routers.api-router.rule=Host(`api.et.127.0.0.1.nip.io`)
       - traefik.http.routers.api-router.service=api-service
       - traefik.http.services.api-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/api
     networks:
       - et_full_system
   admin-development:
@@ -161,21 +146,13 @@ services:
       - ./systems/admin/bin:/home/app/admin/bin:ro
       - ./systems/admin/config:/home/app/admin/config:ro
       - ./systems/admin/lib:/home/app/admin/lib:ro
-      - admin-bundle:/home/app/admin/vendor/bundle
+      - admin-development-bundle:/home/app/admin/vendor/bundle
       - ./systems/admin/Gemfile:/home/app/admin/Gemfile:ro
       - ./systems/admin/Gemfile.lock:/home/app/admin/Gemfile.lock:ro
-    healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      api-development:
         condition: service_healthy
     env_file:
       - systems/admin/.env.full_system.common
@@ -184,6 +161,7 @@ services:
       - traefik.http.routers.admin-router.rule=Host(`admin.et.127.0.0.1.nip.io`)
       - traefik.http.routers.admin-router.service=admin-service
       - traefik.http.services.admin-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/admin
     networks:
       - et_full_system
   et-ccd-export-development:
@@ -197,21 +175,17 @@ services:
       - ./systems/et_ccd_export/config:/home/app/ccd-export/config:ro
       - ./systems/et_ccd_export/lib:/home/app/ccd-export/lib:ro
       - ./systems/et_ccd_export/spec:/home/app/ccd-export/spec:ro
-      - et-ccd-export-bundle:/home/app/ccd-export/vendor/bundle
+      - et-ccd-export-development-bundle:/home/app/ccd-export/vendor/bundle
       - ./systems/et_ccd_export/Gemfile:/home/app/ccd-export/Gemfile:ro
       - ./systems/et_ccd_export/Gemfile.lock:/home/app/ccd-export/Gemfile.lock:ro
-    healthcheck:
-      test: ["CMD", "bundle", "exec", "sidekiqmon", "processes"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
     depends_on:
       redis:
         condition: service_healthy
     env_file:
       - systems/et_ccd_export/.env.full_system.common
       - systems/et_ccd_export/.env.full_system.development
+    labels:
+      - et-full-system.service.source=$PWD/systems/et_ccd_export
     networks:
       - et_full_system
   db:
@@ -222,10 +196,6 @@ services:
       - db-data:/var/lib/postgresql/data
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
-    expose:
-      - 5432
-    ports:
-      - "${DB_PORT-5432}:5432"
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 5s
@@ -243,8 +213,6 @@ services:
       retries: 10
     networks:
       - et_full_system
-    ports:
-      - "${REDIS_PORT-6379}:6379"
   mailhog:
     image: mailhog/mailhog:v1.0.1
     entrypoint: ["/bin/sh", "-c", "MailHog &>/dev/null"]
@@ -304,16 +272,6 @@ services:
   finished-development:
     image: bash
     depends_on:
-      et1-development:
-        condition: service_healthy
-      et3-development:
-        condition: service_healthy
-      api-development:
-        condition: service_healthy
-      admin-development:
-        condition: service_healthy
-      et-ccd-export-development:
-        condition: service_healthy
       mailhog:
         condition: service_healthy
       fake-services:
@@ -338,10 +296,10 @@ services:
 volumes:
   db-data:
   azure_storage_data:
-  et1-bundle:
-  et3-bundle:
-  admin-bundle:
-  api-bundle:
-  et-ccd-export-bundle:
+  et1-development-bundle:
+  et3-development-bundle:
+  admin-development-bundle:
+  api-development-bundle:
+  et-ccd-export-development-bundle:
 networks:
   et_full_system:
