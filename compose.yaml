@@ -64,6 +64,7 @@ services:
       - traefik.http.routers.et1-router.rule=Host(`et1.et.127.0.0.1.nip.io`)
       - traefik.http.routers.et1-router.service=et1-service
       - traefik.http.services.et1-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/et1
     networks:
       - et_full_system
   et3:
@@ -87,6 +88,7 @@ services:
       - traefik.http.routers.et3-router.rule=Host(`et3.et.127.0.0.1.nip.io`)
       - traefik.http.routers.et3-router.service=et3-service
       - traefik.http.services.et3-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/et3
     networks:
       - et_full_system
   api:
@@ -114,6 +116,7 @@ services:
       - traefik.http.routers.api-router.rule=Host(`api.et.127.0.0.1.nip.io`)
       - traefik.http.routers.api-router.service=api-service
       - traefik.http.services.api-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/api
     networks:
       - et_full_system
   admin:
@@ -141,6 +144,7 @@ services:
       - traefik.http.routers.admin-router.rule=Host(`admin.et.127.0.0.1.nip.io`)
       - traefik.http.routers.admin-router.service=admin-service
       - traefik.http.services.admin-service.loadbalancer.server.port=8080
+      - et-full-system.service.source=$PWD/systems/admin
     networks:
       - et_full_system
   et-ccd-export:
@@ -162,6 +166,8 @@ services:
       - systems/et_ccd_export/.env.full_system.production
     networks:
       - et_full_system
+    labels:
+      - et-full-system.service.source=$PWD/systems/et_ccd_export
   db:
     image: postgres:11
     restart: always
