@@ -858,7 +858,8 @@
           "type": "object",
           "title": "The Value Schema",
           "required": [
-            "uploadedDocument"
+            "uploadedDocument",
+            "dateOfCorrespondence"
           ],
           "properties": {
             "typeOfDocument": {
@@ -894,6 +895,16 @@
               "type": "object",
               "title": "The document uploadedDocument Schema",
               "$ref": "#/definitions/uploaded_document"
+            },
+            "dateOfCorrespondence": {
+              "$id": "#/properties/data/properties/documentCollection/items/properties/value/properties/dateOfCorrespondence",
+              "type": "string",
+              "title": "The document dateOfCorrespondence Schema",
+              "default": "",
+              "examples": [
+                "2019-06-21"
+              ],
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2})$"
             }
           }
         }
