@@ -1,4 +1,18 @@
 GIT
+  remote: https://git@github.com/hmcts/et-fake-ccd.git
+  revision: a9e8d8dc2dd0c654ff1906b2a1bfd8dec30f7f4a
+  specs:
+    et_fake_ccd (3.0.1)
+      activemodel (~> 7.0)
+      iodine (~> 0.7)
+      json-schema (~> 4.1.1)
+      roda (~> 3.21)
+      roda-enhanced_logger (~> 0.5.0)
+      rotp (~> 6.2)
+      thor (~> 1.0)
+      tilt (~> 2.0, >= 2.0.9)
+
+GIT
   remote: https://github.com/hmcts/gov_fake_notify.git
   revision: 1394b8fe80e741cea6d433adf508aa3855f5c53a
   tag: v1.2.1
@@ -22,7 +36,7 @@ GEM
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    addressable (2.8.1)
+    addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
     concurrent-ruby (1.2.2)
     date (3.3.3)
@@ -32,20 +46,11 @@ GEM
       nokogiri (~> 1.8, >= 1.8.2)
       sinatra (~> 3.0)
       sinatra-contrib (~> 3.0)
-    et_fake_ccd (2.1.0)
-      activemodel (~> 7.0)
-      iodine (~> 0.7)
-      json-schema (~> 3.0)
-      roda (~> 3.21)
-      roda-enhanced_logger (~> 0.5.0)
-      rotp (~> 6.2)
-      thor (~> 1.0)
-      tilt (~> 2.0, >= 2.0.9)
     foreman (0.87.2)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
     iodine (0.7.54)
-    json-schema (3.0.0)
+    json-schema (4.1.1)
       addressable (>= 2.8)
     jwt (2.7.0)
     mail (2.8.1)
@@ -73,7 +78,7 @@ GEM
       racc (~> 1.4)
     pastel (0.8.0)
       tty-color (~> 0.5)
-    public_suffix (5.0.1)
+    public_suffix (5.0.4)
     racc (1.6.2)
     rack (2.2.6.4)
     rack-protection (3.0.5)
@@ -83,7 +88,7 @@ GEM
     roda-enhanced_logger (0.5.0)
       roda (>= 3.19.0)
       tty-logger (>= 0.3, < 1.0)
-    rotp (6.2.2)
+    rotp (6.3.0)
     ruby2_keywords (0.0.5)
     sinatra (3.0.5)
       mustermann (~> 3.0)
@@ -110,9 +115,9 @@ PLATFORMS
 
 DEPENDENCIES
   et_fake_acas_server (~> 2.0)
-  et_fake_ccd (~> 2.1)
+  et_fake_ccd!
   foreman (~> 0.87.2)
   gov_fake_notify!
 
 BUNDLED WITH
-   2.3.17
+   2.4.6
