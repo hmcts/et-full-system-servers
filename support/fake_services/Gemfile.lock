@@ -1,5 +1,5 @@
 GIT
-  remote: https://git@github.com/hmcts/et-fake-ccd.git
+  remote: https://github.com/hmcts/et-fake-ccd.git
   revision: a9e8d8dc2dd0c654ff1906b2a1bfd8dec30f7f4a
   specs:
     et_fake_ccd (3.0.1)
