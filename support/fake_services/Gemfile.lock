@@ -1,8 +1,9 @@
 GIT
   remote: https://github.com/hmcts/et-fake-ccd.git
-  revision: a9e8d8dc2dd0c654ff1906b2a1bfd8dec30f7f4a
+  revision: 0ffa6cd9e1d80f1790809659929935e309d5ffeb
+  tag: v3.1.4
   specs:
-    et_fake_ccd (3.0.1)
+    et_fake_ccd (3.1.4)
       activemodel (~> 7.0)
       iodine (~> 0.7)
       json-schema (~> 4.1.1)
@@ -120,4 +121,4 @@ DEPENDENCIES
   gov_fake_notify!
 
 BUNDLED WITH
-   2.4.6
+   2.4.18
