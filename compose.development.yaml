@@ -37,7 +37,6 @@ services:
           - et1.et.127.0.0.1.nip.io
           - et3.et.127.0.0.1.nip.io
           - azur.et.127.0.0.1.nip.io
-          - atos.et.127.0.0.1.nip.io
           - ccd.et.127.0.0.1.nip.io
           - acas.et.127.0.0.1.nip.io
 
