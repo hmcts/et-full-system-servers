@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile
     command: /home/app/et1/bin/run_full_system
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://0.0.0.0:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -73,7 +73,7 @@ services:
       dockerfile: Dockerfile
     command: /home/app/et3/bin/run_full_system
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://0.0.0.0:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -125,7 +125,7 @@ services:
       dockerfile: Dockerfile
     command: /home/app/admin/bin/run_full_system
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-O", "-", "-t", "1", "http://0.0.0.0:8080/health"]
       interval: 5s
       timeout: 10s
       retries: 20
