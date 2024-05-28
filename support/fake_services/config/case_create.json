@@ -301,8 +301,7 @@
       "type": "object",
       "title": "The Claimantworkaddress Schema",
       "required": [
-        "claimant_work_address",
-        "claimant_work_phone_number"
+        "claimant_work_address"
       ],
       "properties": {
         "claimant_work_address": {
@@ -380,14 +379,23 @@
           }
         },
         "claimant_work_phone_number": {
-          "$id": "#/properties/data/properties/claimantWorkAddress/properties/claimant_work_phone_number",
-          "type": "string",
-          "title": "The Claimant_work_phone_number Schema",
-          "default": "",
-          "examples": [
-            "03333 423554"
-          ],
-          "pattern": "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$"
+          "oneOf": [
+            {
+              "$id": "#/properties/data/properties/claimantWorkAddress/properties/claimant_work_phone_number",
+              "type": "string",
+              "title": "The Claimant_work_phone_number Schema",
+              "default": "",
+              "examples": [
+                "03333 423554"
+              ],
+              "pattern": "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$"
+            },
+            {
+              "$id": "#/properties/data/properties/claimantWorkAddress/properties/claimant_work_phone_number",
+              "type": "null",
+              "title": "The Claimant_work_phone_number Schema"
+            }
+          ]
         }
       }
     },
@@ -692,7 +700,6 @@
           "required": [
             "respondent_name",
             "respondent_address",
-            "respondent_phone1",
             "respondent_ACAS",
             "respondent_ACAS_question"
           ],
