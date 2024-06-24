@@ -1,12 +1,12 @@
 GIT
   remote: https://github.com/hmcts/et-fake-ccd.git
-  revision: 0ffa6cd9e1d80f1790809659929935e309d5ffeb
-  tag: v3.1.4
+  revision: 2074ba21aea8186836c6f7c93a597687bbf37aeb
+  tag: v3.1.5
   specs:
-    et_fake_ccd (3.1.4)
+    et_fake_ccd (3.1.5)
       activemodel (~> 7.0)
-      iodine (~> 0.7)
       json-schema (~> 4.1.1)
+      puma (~> 6.4)
       roda (~> 3.21)
       roda-enhanced_logger (~> 0.5.0)
       rotp (~> 6.2)
@@ -50,7 +50,7 @@ GEM
     foreman (0.87.2)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    iodine (0.7.54)
+    iodine (0.7.58)
     json-schema (4.1.1)
       addressable (>= 2.8)
     jwt (2.7.0)
@@ -74,12 +74,15 @@ GEM
       timeout
     net-smtp (0.3.3)
       net-protocol
+    nio4r (2.7.3)
     nokogiri (1.14.0)
       mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     pastel (0.8.0)
       tty-color (~> 0.5)
     public_suffix (5.0.4)
+    puma (6.4.2)
+      nio4r (~> 2.0)
     racc (1.6.2)
     rack (2.2.6.4)
     rack-protection (3.0.5)
@@ -121,4 +124,4 @@ DEPENDENCIES
   gov_fake_notify!
 
 BUNDLED WITH
-   2.4.18
+   2.5.7
