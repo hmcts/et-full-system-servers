@@ -116,7 +116,7 @@
       COMPLETE CLAIM: ((url))
       You’ll receive a confirmation email once you’ve submitted your claim.
       Contact us: http://www.justice.gov.uk/contacts/hmcts/tribunals/employment
-  - id: '97a117f1-727d-4631-bbc6-b2bc98d30a0f'
+  - id: 'a3b117f1-727d-4631-bbc6-b2bc98d30a0f'
     name: 'et1-access-details-v1-cy'
     subject: 'Tribiwnlys Cyflogaeth: cwblhau eich hawliad'
     message: |
