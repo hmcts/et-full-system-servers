@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "sianglim.slim",
+        "eamodio.gitlens",
+        "shopify.ruby-lsp",
+        "koichisasada.vscode-rdbg"
+    ]
+}
