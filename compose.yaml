@@ -12,12 +12,18 @@ services:
   traefik:
     # The official v2 Traefik docker image
     image: traefik:v2.5
-    # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200 --ping
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --entryPoints.http.address=:3100
+      - --entryPoints.https.address=:3443           # Adding HTTPS entry point
+      - --entryPoints.traefik.address=:3200
+      - --ping
     ports:
       - "3100:3100"
       # The Web UI (enabled by --api.insecure=true)
       - "3200:3200"
+      - "3443:3443"               # Expose HTTPS port
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
@@ -64,6 +70,7 @@ services:
       - traefik.http.routers.et1-router.rule=HostRegexp(`et1{anydomain:.*}`)
       - traefik.http.routers.et1-router.service=et1-service
       - traefik.http.services.et1-service.loadbalancer.server.port=8080
+      - traefik.http.routers.et1-router.tls=true      # Enable HTTPS
       - et-full-system.service.source=$PWD/systems/et1
     networks:
       - et_full_system
@@ -88,6 +95,7 @@ services:
       - traefik.http.routers.et3-router.rule=HostRegexp(`et3{anydomain:.*}`)
       - traefik.http.routers.et3-router.service=et3-service
       - traefik.http.services.et3-service.loadbalancer.server.port=8080
+      - traefik.http.routers.et3-router.tls=true      # Enable HTTPS
       - et-full-system.service.source=$PWD/systems/et3
     networks:
       - et_full_system
@@ -144,6 +152,8 @@ services:
       - traefik.http.routers.admin-router.rule=HostRegexp(`admin{anydomain:.*}`)
       - traefik.http.routers.admin-router.service=admin-service
       - traefik.http.services.admin-service.loadbalancer.server.port=8080
+      - traefik.http.routers.admin-router.tls=true      # Enable HTTPS
+
       - et-full-system.service.source=$PWD/systems/admin
     networks:
       - et_full_system
