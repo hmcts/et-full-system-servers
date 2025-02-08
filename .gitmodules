@@ -1,15 +1,15 @@
 [submodule "systems/et1"]
 	path = systems/et1
-	url = git@github.com:hmcts/et-pet-et1.git
+	url = ../et-pet-et1.git
 [submodule "systems/et3"]
 	path = systems/et3
-	url = git@github.com:hmcts/et-pet-et3.git
+	url = ../et-pet-et3.git
 [submodule "systems/admin"]
 	path = systems/admin
-	url = git@github.com:hmcts/et-pet-admin.git
+	url = ../et-pet-admin.git
 [submodule "systems/api"]
 	path = systems/api
-	url = git@github.com:hmcts/et-pet-api.git
+	url = ../et-pet-api.git
 [submodule "systems/et_ccd_export"]
 	path = systems/et_ccd_export
-	url = git@github.com:hmcts/et-pet-ccd-export.git
+	url = ../et-pet-ccd-export.git
