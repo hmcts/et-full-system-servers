@@ -63,23 +63,6 @@
             "Mr", "Mrs", "Miss", "Ms", "Dr", "Prof", "Sir", "Lord", "Lady", "Dame", "Capt", "Rev", "Other"
           ]
         },
-        "claimant_title_other": {
-          "oneOf": [
-            {
-              "$id": "#/properties/data/properties/claimantIndType/properties/claimant_title_other",
-              "type": "string",
-              "title": "The Claimant_title_other Schema",
-              "default": "",
-              "examples": [
-                "Reverend"
-              ]
-            },
-            {
-              "$id": "#/properties/data/properties/claimantIndType/properties/claimant_title_other",
-              "type": "null"
-            }
-          ]
-        },
         "claimant_first_names": {
           "$id": "#/properties/data/properties/claimantIndType/properties/claimant_first_names",
           "type": "string",
@@ -971,46 +954,6 @@
           ]
         }
       }
-    },
-    "claimantHearingPreference": {
-      "$id": "#/properties/data/properties/claimantHearingPreference",
-      "title": "The claimant hearing preference schema",
-      "type": "object",
-      "required": [
-        "claimant_hearing_panel_preference",
-        "claimant_hearing_panel_preference_why"
-      ],
-      "properties": {
-        "claimant_hearing_panel_preference": {
-          "oneOf": [
-            {
-              "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference",
-              "type": "string",
-              "title": "Indicates if the claimant would prefer a judge, panel or doesnt have a preference",
-              "examples": [
-                "Judge"
-              ],
-              "enum": [
-                "No preference",
-                "Judge",
-                "Panel"
-              ]    
-            },
-            {
-              "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference",
-              "type": "null"
-            }
-          ]
-        },
-        "claimant_hearing_panel_preference_why": {
-          "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference_why",
-          "type": "string",
-          "title": "If the claimant has specified a judge or a panel, this field will contain the reason why",
-          "examples": [
-            "I would like to have a hearing panel"
-          ]
-        }
-      }
     }
   },
   "schema": "http://json-schema.org/draft-07/schema#",
@@ -1029,8 +972,7 @@
     "claimantOtherType",
     "claimantRepresentedQuestion",
     "positionType",
-    "documentCollection",
-    "claimantHearingPreference"
+    "documentCollection"
   ],
   "additionalProperties": false,
   "properties": {
@@ -1167,10 +1109,6 @@
         "Received by Auto-Import"
       ],
       "enum": ["Received by Auto-Import"]
-    },
-    "claimantHearingPreference": {
-      "$id": "#/properties/data/properties/claimantHearingPreference",
-      "$ref": "#/definitions/claimantHearingPreference"
     }
   }
 }
