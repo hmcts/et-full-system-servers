@@ -179,7 +179,7 @@ services:
     labels:
       - et-full-system.service.source=$PWD/systems/et_ccd_export
   db:
-    image: postgres:11
+    image: postgres:15
     restart: always
     user: postgres
     volumes:
