@@ -11,7 +11,7 @@ version: "3.8"
 services:
   traefik:
     # The official v2 Traefik docker image
-    image: traefik:v2.5
+    image: traefik:v2.11.32
     # Enables the web UI and tells Traefik to listen to docker
     command: --api.insecure=true --providers.docker --entryPoints.http.address=:3100 --entryPoints.traefik.address=:3200 --ping
     ports:
