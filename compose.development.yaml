@@ -30,16 +30,7 @@ services:
     networks:
       et_full_system:
         aliases:
-          - azure_blob_storage.et.127.0.0.1.nip.io
-          - notify.et.127.0.0.1.nip.io
-          - api.et.127.0.0.1.nip.io
-          - admin.et.127.0.0.1.nip.io
-          - et1.et.127.0.0.1.nip.io
-          - et3.et.127.0.0.1.nip.io
-          - azur.et.127.0.0.1.nip.io
-          - atos.et.127.0.0.1.nip.io
-          - ccd.et.127.0.0.1.nip.io
-          - acas.et.127.0.0.1.nip.io
+          - et_azure_blob_storage.localhost
 
   et1-development:
     build:
@@ -197,7 +188,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: ["CMD", "pg_isready"]
       interval: 5s
       timeout: 2s
       retries: 15
@@ -207,7 +198,7 @@ services:
     image: redis:4.0
     restart: always
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 5s
       timeout: 2s
       retries: 10
@@ -266,7 +257,7 @@ services:
       - traefik.http.services.notify-service.loadbalancer.server.port=9200
     environment:
       GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
-      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+      GOVUK_NOTIFY_CUSTOM_URL: http://fake-services:9200
     networks:
       - et_full_system
   finished-development:

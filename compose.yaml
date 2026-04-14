@@ -36,16 +36,8 @@ services:
     networks:
       et_full_system:
         aliases:
-          - azure_blob_storage.et.127.0.0.1.nip.io
-          - notify.et.127.0.0.1.nip.io
-          - api.et.127.0.0.1.nip.io
-          - admin.et.127.0.0.1.nip.io
-          - et1.et.127.0.0.1.nip.io
-          - et3.et.127.0.0.1.nip.io
-          - azur.et.127.0.0.1.nip.io
-          - atos.et.127.0.0.1.nip.io
-          - ccd.et.127.0.0.1.nip.io
-          - acas.et.127.0.0.1.nip.io
+          - et_azure_blob_storage.localhost
+          - et_ccd.localhost
 
   et1:
     build:
@@ -69,8 +61,13 @@ services:
     labels:
       - traefik.http.routers.et1-router.rule=HostRegexp(`et1{anydomain:.*}`)
       - traefik.http.routers.et1-router.service=et1-service
-      - traefik.http.services.et1-service.loadbalancer.server.port=8080
+      - traefik.http.routers.et1-router.entrypoints=https
       - traefik.http.routers.et1-router.tls=true # Enable HTTPS
+      - traefik.http.routers.et1-router-http.rule=HostRegexp(`et1{anydomain:.*}`)
+      - traefik.http.routers.et1-router-http.service=et1-service
+      - traefik.http.routers.et1-router-http.entrypoints=http
+      - traefik.http.routers.et1-router-http.tls=false # Disable HTTPS
+      - traefik.http.services.et1-service.loadbalancer.server.port=8080
       - et-full-system.service.source=$PWD/systems/et1
     networks:
       - et_full_system
@@ -229,7 +226,7 @@ services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     labels:
-      - traefik.http.routers.azurite-router.rule=HostRegexp(`azure_blob_storage{anydomain:.*}`)
+      - traefik.http.routers.azurite-router.rule=HostRegexp(`et_azure_blob_storage{anydomain:.*}`)
       - traefik.http.routers.azurite-router.service=azurite-service
       - traefik.http.services.azurite-service.loadbalancer.server.port=10000
     command: azurite-blob --blobHost 0.0.0.0 --disableProductStyleUrl -l /data
@@ -253,7 +250,7 @@ services:
       - traefik.http.routers.acas-router.rule=HostRegexp(`acas{anydomain:.*}`)
       - traefik.http.routers.acas-router.service=acas-service
       - traefik.http.services.acas-service.loadbalancer.server.port=9000
-      - traefik.http.routers.ccd-router.rule=HostRegexp(`ccd{anydomain:.*}`)
+      - traefik.http.routers.ccd-router.rule=HostRegexp(`et_ccd{anydomain:.*}`)
       - traefik.http.routers.ccd-router.service=ccd-service
       - traefik.http.services.ccd-service.loadbalancer.server.port=9100
       - traefik.http.routers.notify-router.rule=HostRegexp(`notify{anydomain:.*}`)
@@ -261,7 +258,7 @@ services:
       - traefik.http.services.notify-service.loadbalancer.server.port=9200
     environment:
       GOVUK_NOTIFY_API_KEY_LIVE: fake-key-7fc24bc8-1938-1827-bed3-fb237f9cd5e7-c34b3015-02a1-4e01-b922-1ea21f331d4d
-      GOVUK_NOTIFY_CUSTOM_URL: http://notify.et.127.0.0.1.nip.io:3100
+      GOVUK_NOTIFY_CUSTOM_URL: http://fake-services:9200
     networks:
       - et_full_system
   finished:
