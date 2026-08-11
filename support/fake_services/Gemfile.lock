@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/hmcts/et-fake-ccd.git
-  revision: 148caff3ce5bf99048effa478dacb32bb5bf3436
-  tag: v3.2.0
+  revision: 6b0160ab4316b052efa644cc3d457cc949c3bc6f
+  tag: v3.2.1
   specs:
-    et_fake_ccd (3.2.0)
+    et_fake_ccd (3.2.1)
       activemodel (>= 7.0)
       json-schema (~> 4.1.1)
       puma (>= 6.4)
