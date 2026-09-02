@@ -532,9 +532,17 @@
               "title": "The Claimant_claimant_employed_notice_period Schema"
             }
           ]
+        },
+        "dateOfLastEvent": {
+          "$id": "#/properties/data/properties/claimantOtherType/properties/dateOfLastEvent",
+          "type": "string",
+          "title": "The date of last event Schema",
+          "default": "",
+          "examples": [
+            "2022-12-31"
+          ],
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})$"
         }
-
-
       }
     },
     "representative_claimant_type": {
