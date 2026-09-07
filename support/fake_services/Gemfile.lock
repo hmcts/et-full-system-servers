@@ -14,14 +14,16 @@ GIT
 
 GIT
   remote: https://github.com/hmcts/gov_fake_notify.git
-  revision: 95d6953ccbd2e96baf593af5076ff2cd8355f117
-  tag: v2.0.1
+  revision: 77ed4f93f094393a196f0823eb8a69b68416995b
+  tag: v3.0.0
   specs:
-    gov_fake_notify (2.0.1)
+    gov_fake_notify (3.0.0)
       activemodel (>= 6.1)
-      jwt (~> 2.2, >= 2.2.3)
+      jwt (~> 3.0)
       mail (~> 2.7, >= 2.7.1)
-      puma (~> 6.4)
+      pstore (~> 0.2.1)
+      puma (>= 6.0)
+      rack (>= 2.0)
       roda (~> 3.48)
       thor (~> 1.1)
       tilt (~> 2.0, >= 2.0.10)
@@ -61,7 +63,8 @@ GEM
     iodine (0.7.58)
     json-schema (4.1.1)
       addressable (>= 2.8)
-    jwt (2.7.0)
+    jwt (3.2.0)
+      base64
     mail (2.8.1)
       mini_mime (>= 0.1.1)
       net-imap
@@ -90,6 +93,7 @@ GEM
       mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     prism (1.9.0)
+    pstore (0.2.1)
     public_suffix (6.0.0)
     puma (6.4.2)
       nio4r (~> 2.0)
