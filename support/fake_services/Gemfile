@@ -6,7 +6,7 @@ git_source(:github) do |repo_name|
 end
 
 
-gem 'et_fake_acas_server', '~> 2.0'
+gem 'et_fake_acas_server', '~> 4.0'
 gem 'gov_fake_notify', git: 'https://github.com/hmcts/gov_fake_notify.git', tag: 'v3.0.0'
 gem 'et_fake_ccd', git: 'https://github.com/hmcts/et-fake-ccd.git', tag: 'v3.2.2'
 
