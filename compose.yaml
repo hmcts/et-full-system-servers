@@ -153,27 +153,6 @@ services:
       - et-full-system.service.source=$PWD/systems/admin
     networks:
       - et_full_system
-  et-ccd-export:
-    build:
-      context: systems/et_ccd_export
-      dockerfile: Dockerfile
-    command: /home/app/ccd-export/bin/run_full_system
-    healthcheck:
-      test: ["CMD", "bundle", "exec", "sidekiqmon", "processes"]
-      interval: 5s
-      timeout: 10s
-      retries: 20
-      start_period: 40s
-    depends_on:
-      redis:
-        condition: service_healthy
-    env_file:
-      - systems/et_ccd_export/.env.full_system.common
-      - systems/et_ccd_export/.env.full_system.production
-    networks:
-      - et_full_system
-    labels:
-      - et-full-system.service.source=$PWD/systems/et_ccd_export
   db:
     image: postgres:15
     restart: always
@@ -268,8 +247,6 @@ services:
       api:
         condition: service_healthy
       admin:
-        condition: service_healthy
-      et-ccd-export:
         condition: service_healthy
       mailhog:
         condition: service_healthy
