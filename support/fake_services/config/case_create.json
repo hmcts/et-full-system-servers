@@ -533,15 +533,25 @@
             }
           ]
         },
-        "dateOfLastEvent": {
-          "$id": "#/properties/data/properties/claimantOtherType/properties/dateOfLastEvent",
-          "type": "string",
-          "title": "The date of last event Schema",
-          "default": "",
-          "examples": [
-            "2022-12-31"
-          ],
-          "pattern": "^(\\d{4}-\\d{2}-\\d{2})$"
+        "dateOfLastEvent":
+        {
+          "oneOf": [
+            {
+              "$id": "#/properties/data/properties/claimantOtherType/properties/dateOfLastEvent",
+              "type": "string",
+              "title": "The date of last event Schema",
+              "default": "",
+              "examples": [
+                "2022-12-31"
+              ],
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2})$"
+            },
+            {
+              "$id": "#/properties/data/properties/claimantOtherType/properties/dateOfLastEvent",
+              "type": "null",
+              "title": "The date of last event Schema"
+            }
+          ]
         }
       }
     },
@@ -726,9 +736,7 @@
             "respondent_name",
             "respondent_address",
             "respondent_ACAS",
-            "respondent_ACAS_question",
-            "acasCertificateReceiptDate",
-            "acasCertificateIssueDate"
+            "respondent_ACAS_question"
           ],
           "properties": {
             "respondent_name": {
@@ -1024,10 +1032,7 @@
       "$id": "#/properties/data/properties/claimantHearingPreference",
       "title": "The claimant hearing preference schema",
       "type": "object",
-      "required": [
-        "claimant_hearing_panel_preference",
-        "claimant_hearing_panel_preference_why"
-      ],
+      "required": [],
       "properties": {
         "claimant_hearing_panel_preference": {
           "oneOf": [
@@ -1051,11 +1056,19 @@
           ]
         },
         "claimant_hearing_panel_preference_why": {
-          "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference_why",
-          "type": "string",
-          "title": "If the claimant has specified a judge or a panel, this field will contain the reason why",
-          "examples": [
-            "I would like to have a hearing panel"
+          "oneOf": [
+            {
+              "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference_why",
+              "type": "string",
+              "title": "If the claimant has specified a judge or a panel, this field will contain the reason why",
+              "examples": [
+                "I would like to have a hearing panel"
+              ]
+            },
+            {
+              "$id": "#/properties/data/properties/claimantHearingPreference/properties/claimant_hearing_panel_preference_why",
+              "type": "null"
+            }
           ]
         }
       }
@@ -1077,8 +1090,7 @@
     "claimantOtherType",
     "claimantRepresentedQuestion",
     "positionType",
-    "documentCollection",
-    "claimantHearingPreference"
+    "documentCollection"
   ],
   "additionalProperties": false,
   "properties": {
