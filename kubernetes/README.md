@@ -3,7 +3,7 @@
 Each service owns its Helm chart and local Kubernetes profile. The parent repo
 owns the common runner and shared infrastructure. Running one service never
 installs the others. ET1 is currently the only configured application, running
-its production web process without a database or worker.
+its existing production startup script with shared PostgreSQL.
 
 ## Shared ingress
 
@@ -53,6 +53,30 @@ that setup; this runner will not perform it automatically. Do not disable TLS
 verification globally. `--ingress-values` allows supplying environment-specific
 controller/certificate settings without changing service code.
 
+## Shared PostgreSQL
+
+From the parent repo:
+
+```sh
+bin/kubernetes postgres --context orbstack
+```
+
+This installs the local chart in `kubernetes/postgres` into
+`et-full-system-infra`. PostgreSQL 15 matches Compose and is accessible only
+inside the cluster at `postgres.et-full-system-infra.svc.cluster.local:5432`.
+The development username/password are `postgres` / `local-only`; applications
+create their own databases. ET1 uses `etdb`.
+
+The StatefulSet requests a 5Gi persistent volume using the cluster's default
+storage class. Pod restarts retain data. Removing the Helm release also retains
+its PVC (`data-postgres-0`); deleting that PVC destroys its database data.
+Clusters need a dynamic storage provisioner, or an appropriate provisioned PV.
+Override image, credentials, resources or storage class with an additional values
+file: `bin/kubernetes postgres --postgres-values /path/to/values.yaml`.
+Keep service DB configuration consistent if changing credentials or the host.
+Postgres initialization credentials apply only to a new volume; changing Helm
+values does not change passwords in an existing database.
+
 ## Deploy one service
 
 ```sh
@@ -64,8 +88,17 @@ cd systems/et1
 
 Open <https://et1.k8s.orb.local/>. No port forwarding is needed. The hostname
 uses OrbStack's local wildcard DNS, not an external DNS service. The request
-reaches ET1, but `/apply` still reports the expected missing-database error.
-Its error handler may return HTTP 200; that is not evidence of a functional page.
+reaches ET1. After database setup, `/apply` renders the claim start page.
+ET1 uses its existing `./run.sh` startup script. Local values set
+`DOCKER_STATE=create`, so the script creates the database, runs schema/data
+migrations and seeds, then starts the web and Solid Queue processes from
+`Procfile`. The main application chart keeps `DOCKER_STATE=migrate` for the
+existing production startup behaviour. There is no separate migration Job.
+
+`up` waits for ET1's web readiness probe (the `/apply` page) and rollout before
+reporting success. Automated tests should wait for `up` to succeed. Startup
+runs the existing tasks again whenever the container restarts, matching the
+application's current mechanism. Migration improvements are a separate phase.
 
 The local HTTP-only initializer is no longer mounted: Rails keeps its existing
 production SSL assumption and uses secure session cookies. ET1's application
@@ -126,7 +159,7 @@ bin/kubernetes up --build --all
 
 `--all` selects services with a local profile, currently ET1 only. Repeat
 `--service` to select a subset. The parent requires an explicit selection;
-it never implicitly deploys everything. Shared ingress is installed separately.
+it never implicitly deploys everything. Shared ingress and PostgreSQL are installed separately.
 
 ## Configuration ownership
 
@@ -137,5 +170,6 @@ modify the checked-out application chart or `Chart.lock`. ET1's local helper
 overrides the AKS topology rules hardcoded in base 1.4.1.
 
 Commit service configuration in the child repo and shared infrastructure/runner
-changes in this parent repo. PostgreSQL and Azurite will be separate shared
-infrastructure steps, without requiring every service to be deployed.
+changes in this parent repo. PostgreSQL is a separate shared infrastructure
+step; Azurite and the other applications remain future steps. The claim start
+page works, but submitting a claim still needs the API and other integrations.

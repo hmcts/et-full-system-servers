@@ -1,0 +1,16 @@
+# Local development credentials only; never point applications at production.
+image: postgres:15
+imagePullPolicy: IfNotPresent
+username: postgres
+password: local-only
+storage:
+  size: 5Gi
+  # Empty uses the cluster's default dynamic provisioner.
+  storageClass: ""
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

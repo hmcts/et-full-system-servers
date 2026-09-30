@@ -102,6 +102,17 @@ def install_ingress(context, extra_values=None, http_port=None, https_port=None)
     run(*command)
 
 
+def install_postgres(context, extra_values=None):
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", "et-local-postgres",
+               str(ROOT / "kubernetes/postgres"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    run(*command)
+
+
 def build(config, docker_context):
     run("docker", "--context", docker_context, "build", "-t", config["image"],
         str(config["service"]))
@@ -109,7 +120,7 @@ def build(config, docker_context):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress"])
+    parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress", "postgres"])
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--service", action="append", help="select a service; repeat to select several")
     selection.add_argument("--all", action="store_true", help="select every service with a local profile")
@@ -119,6 +130,7 @@ def main():
     parser.add_argument("--docker-context", default=DEFAULT_CONTEXT, help="Docker build context (default: orbstack; independent of Kubernetes)")
     parser.add_argument("--domain", help="override local service domain, e.g. localhost or dev.example.test")
     parser.add_argument("--ingress-values", help="additional shared-controller Helm values, only for 'ingress'")
+    parser.add_argument("--postgres-values", help="additional PostgreSQL Helm values, only for postgres")
     parser.add_argument("--http-port", type=int, help="shared ingress HTTP port (default: chart values, 80)")
     parser.add_argument("--https-port", type=int, help="HTTPS port for shared ingress or service URLs (default: 443)")
     args = parser.parse_args()
@@ -130,6 +142,13 @@ def main():
     for port in (args.http_port, args.https_port, args.port):
         if port is not None and not 1 <= port <= 65535:
             parser.error("ports must be between 1 and 65535")
+    if args.postgres_values and args.command != "postgres":
+        parser.error("--postgres-values applies only to postgres")
+    if args.command == "postgres":
+        if args.service or args.all or args.build or args.ingress_values:
+            parser.error("postgres is shared infrastructure; do not select/build services")
+        install_postgres(args.context, args.postgres_values)
+        return
     if args.command == "ingress":
         if args.service or args.all or args.build:
             parser.error("ingress is shared infrastructure; do not select/build services")
@@ -179,11 +198,14 @@ def main():
         elif args.command == "up":
             with_chart(config, lambda chart: run("helm", "upgrade", "--install",
                        config["release"], str(chart), "--kube-context", args.context,
-                       *helm_options(config, args.domain, args.https_port)))
+                       *helm_options(config, args.domain, args.https_port),
+                       *(["--wait", "--timeout", "300s"] if config.get("waitForRollout") else [])))
             # A rebuilt image with the same tag does not change the pod template.
             if args.build:
                 kube("rollout", "restart", "deployment", "-l",
                         f"app.kubernetes.io/instance={config['release']}")
+            if config.get("waitForRollout"):
+                kube("rollout", "status", f"deployment/{config['workload']}", "--timeout=120s")
             kube("get", "pods", "-l", f"app.kubernetes.io/instance={config['release']}")
             if config.get("hostPrefix"):
                 domain = args.domain or config.get("domain", "k8s.orb.local")
