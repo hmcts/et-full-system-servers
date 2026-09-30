@@ -159,7 +159,7 @@ bin/kubernetes up --build --all
 
 `--all` selects services with a local profile, currently ET1 and API. Repeat
 `--service` to select a subset. The parent requires an explicit selection;
-it never implicitly deploys everything. Shared ingress, PostgreSQL and Azurite are installed separately.
+it never implicitly deploys everything. Shared ingress, PostgreSQL, Azurite and support services are installed separately.
 
 ## Configuration ownership
 
@@ -171,8 +171,8 @@ overrides the AKS topology rules hardcoded in base 1.4.1.
 
 Commit service configuration in the child repo and shared infrastructure/runner
 changes in this parent repo. See [the API instructions](../systems/api/kubernetes/README.md) for its deployment
-and the first-start worker migration race. ET1 connects directly to the internal API Service; fake
-external integrations remain future steps.
+and the first-start worker migration race. ET1 connects directly to the internal API Service. ACAS, CCD, Notify and mail
+use the shared local support services below.
 
 ## Shared Azurite
 
@@ -187,3 +187,50 @@ Azurite development account and key, not Azure production credentials.
 Use `--azurite-values /path/to/values.yaml` to override the image, account,
 containers or storage settings; keep API storage values consistent. The PVC
 `data-azurite-0` retains blobs across pod restarts and Helm removal.
+
+## Shared fake services and mail
+
+From the parent checkout:
+
+```sh
+bin/kubernetes support --build
+```
+
+This builds `support/fake_services/Dockerfile` and installs the existing
+Foreman processes (fake ACAS, CCD and Notify) in one pod, matching Compose.
+MailHog runs in a separate pod. If the image is already available, omit
+`--build`. Application deployment remains separate. The default Kubernetes and
+Docker contexts are `orbstack`; override them independently as for applications.
+
+All support Services live in `et-full-system-infra`. API and ET1 use internal
+DNS names, including that namespace. Fake Notify sends SMTP mail to `mailhog`
+in its own namespace. Fake ACAS and CCD use their bundled test credentials.
+No application source or production chart values are changed.
+
+Browser access through the shared ingress:
+
+- MailHog: <https://mail.k8s.orb.local/>
+- Fake CCD: <https://et-ccd.k8s.orb.local/ui/>
+- Fake ACAS: <https://acas.k8s.orb.local/>
+- Fake Notify: <https://notify.k8s.orb.local/>
+
+These hosts expose each existing service; not every root path has a web page.
+`support --domain localhost` changes the suffix; configure local DNS and TLS
+as described above. With an ingress HTTPS port of 3443, include `:3443` in
+browser URLs. `--support-values /path/to/values.yaml` overrides images, pull
+policies and ingress class. Other clusters must have the locally built fake
+services image available.
+
+Fake CCD/Notify state and MailHog messages are ephemeral and reset when their
+pods restart, as in the existing Compose setup. PostgreSQL and Azurite retain
+their own persistent data. Support pod readiness checks ports/API availability;
+it does not prove that an entire claim workflow succeeds.
+
+During setup, replaying a captured single-claim request returned 202; the API
+worker fetched an ACAS certificate, stored files in Azurite, exported to fake
+CCD and delivered the confirmation email to MailHog.
+
+```sh
+kubectl --context orbstack -n et-full-system-infra logs deployment/fake-services --follow
+kubectl --context orbstack -n et-full-system-infra logs deployment/mailhog --follow
+```
