@@ -1,0 +1,43 @@
+# Shared local ingress controller. No provider-specific Kubernetes resources.
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+ingressClass:
+  enabled: true
+  name: et-local
+  isDefaultClass: false
+providers:
+  kubernetesIngress:
+    enabled: true
+    ingressClass: et-local
+  kubernetesCRD:
+    enabled: false
+  kubernetesGateway:
+    enabled: false
+gateway:
+  enabled: false
+ingressRoute:
+  dashboard:
+    enabled: false
+service:
+  spec:
+    type: LoadBalancer
+ports:
+  web:
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    http:
+      tls:
+        enabled: true
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

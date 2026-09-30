@@ -1,0 +1,7 @@
+{
+  "chart": "traefik",
+  "repository": "https://traefik.github.io/charts",
+  "version": "41.6.0",
+  "release": "et-local-ingress",
+  "namespace": "et-full-system-infra"
+}
