@@ -122,5 +122,5 @@ and then restart as normal.
 
 Services can be built and deployed individually from their own directories,
 with an optional parent command for a selected set or all configured services.
-ET1 and API have local Kubernetes profiles, with shared PostgreSQL, Azurite and fake support services. See
+ET1, API, ET3 and admin have local Kubernetes profiles, with shared PostgreSQL, Azurite and fake support services. See
 [the Kubernetes instructions](kubernetes/README.md).

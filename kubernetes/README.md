@@ -2,8 +2,9 @@
 
 Each service owns its Helm chart and local Kubernetes profile. The parent repo
 owns the common runner and shared infrastructure. Running one service never
-installs the others. ET1 and API are configured, using their existing production startup scripts
-with shared PostgreSQL. API also uses shared Azurite and a separate GoodJob worker.
+installs the others. ET1, API, ET3 and admin are configured, using their existing startup scripts
+with production Rails settings and shared PostgreSQL. API also uses shared
+Azurite and a separate GoodJob worker.
 
 ## Shared ingress
 
@@ -157,7 +158,7 @@ bin/kubernetes up --service et1
 bin/kubernetes up --build --all
 ```
 
-`--all` selects services with a local profile, currently ET1 and API. Repeat
+`--all` selects services with a local profile, currently ET1, API, ET3 and admin. Repeat
 `--service` to select a subset. The parent requires an explicit selection;
 it never implicitly deploys everything. Shared ingress, PostgreSQL, Azurite and support services are installed separately.
 
@@ -234,3 +235,16 @@ CCD and delivered the confirmation email to MailHog.
 kubectl --context orbstack -n et-full-system-infra logs deployment/fake-services --follow
 kubectl --context orbstack -n et-full-system-infra logs deployment/mailhog --follow
 ```
+
+## ET3 and admin
+
+ET3 owns setup of its database, using the same startup pattern as ET1. Admin
+shares the API databases and seeds its own users/permissions; it also reads the
+ET1 and ET3 databases. Deploy ET3 before using admin, because admin's navigation
+requires the ET3 schema. From each child directory, run `../../bin/kubernetes up`.
+
+See [ET3 instructions](../systems/et3/kubernetes/README.md) and
+[admin instructions](../systems/admin/kubernetes/README.md). Browser URLs are
+<https://et3.k8s.orb.local/> and <https://admin.k8s.orb.local/>. The local seeded
+admin login is `admin` / `password`. Redis is not deployed; the legacy Sidekiq
+page is expected to fail, while GoodJob uses PostgreSQL.
