@@ -113,6 +113,41 @@ def install_postgres(context, extra_values=None):
     run(*command)
 
 
+def install_azurite(context, extra_values=None):
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", "et-local-azurite",
+               str(ROOT / "kubernetes/azurite"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    run(*command)
+    run("kubectl", "--context", context, "--namespace", "et-full-system-infra",
+        "exec", "-i", "statefulset/azurite", "--", "node", "-",
+        input=(ROOT / "kubernetes/azurite/create-containers.js").read_text(), text=True)
+
+
+def install_support(context, docker_context, build_image=False, extra_values=None, domain=None):
+    kubectl("get", "nodes", context=context)
+    if build_image:
+        run("docker", "--context", docker_context, "build", "-t",
+            "et-full-system-servers-fake-services:latest", str(ROOT / "support/fake_services"))
+    command = ["helm", "upgrade", "--install", "et-local-support",
+               str(ROOT / "kubernetes/support"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    if domain:
+        command.extend(["--set-string", f"domain={domain}"])
+    run(*command)
+    if build_image:
+        run("kubectl", "--context", context, "-n", "et-full-system-infra",
+            "rollout", "restart", "deployment/fake-services")
+        run("kubectl", "--context", context, "-n", "et-full-system-infra",
+            "rollout", "status", "deployment/fake-services", "--timeout=180s")
+
+
 def build(config, docker_context):
     run("docker", "--context", docker_context, "build", "-t", config["image"],
         str(config["service"]))
@@ -120,7 +155,7 @@ def build(config, docker_context):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress", "postgres"])
+    parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress", "postgres", "azurite", "support"])
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--service", action="append", help="select a service; repeat to select several")
     selection.add_argument("--all", action="store_true", help="select every service with a local profile")
@@ -131,8 +166,10 @@ def main():
     parser.add_argument("--domain", help="override local service domain, e.g. localhost or dev.example.test")
     parser.add_argument("--ingress-values", help="additional shared-controller Helm values, only for 'ingress'")
     parser.add_argument("--postgres-values", help="additional PostgreSQL Helm values, only for postgres")
+    parser.add_argument("--azurite-values", help="additional Azurite values, only for azurite")
     parser.add_argument("--http-port", type=int, help="shared ingress HTTP port (default: chart values, 80)")
     parser.add_argument("--https-port", type=int, help="HTTPS port for shared ingress or service URLs (default: 443)")
+    parser.add_argument("--support-values", help="additional support Helm values, only for support")
     args = parser.parse_args()
     if not args.context.strip() or not args.docker_context.strip():
         parser.error("context names must not be empty")
@@ -142,6 +179,20 @@ def main():
     for port in (args.http_port, args.https_port, args.port):
         if port is not None and not 1 <= port <= 65535:
             parser.error("ports must be between 1 and 65535")
+    if args.support_values and args.command != "support":
+        parser.error("--support-values applies only to support")
+    if args.command == "support":
+        if args.service or args.all or args.ingress_values or args.postgres_values or args.azurite_values:
+            parser.error("support is shared infrastructure; do not select services or other infrastructure values")
+        install_support(args.context, args.docker_context, args.build, args.support_values, args.domain)
+        return
+    if args.azurite_values and args.command != "azurite":
+        parser.error("--azurite-values applies only to azurite")
+    if args.command == "azurite":
+        if args.service or args.all or args.build or args.ingress_values or args.postgres_values:
+            parser.error("azurite is shared infrastructure; do not select/build services")
+        install_azurite(args.context, args.azurite_values)
+        return
     if args.postgres_values and args.command != "postgres":
         parser.error("--postgres-values applies only to postgres")
     if args.command == "postgres":
@@ -205,7 +256,8 @@ def main():
                 kube("rollout", "restart", "deployment", "-l",
                         f"app.kubernetes.io/instance={config['release']}")
             if config.get("waitForRollout"):
-                kube("rollout", "status", f"deployment/{config['workload']}", "--timeout=120s")
+                for workload in config.get("workloads", [config["workload"]]):
+                    kube("rollout", "status", f"deployment/{workload}", "--timeout=120s")
             kube("get", "pods", "-l", f"app.kubernetes.io/instance={config['release']}")
             if config.get("hostPrefix"):
                 domain = args.domain or config.get("domain", "k8s.orb.local")

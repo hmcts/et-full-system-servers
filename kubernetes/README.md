@@ -2,8 +2,8 @@
 
 Each service owns its Helm chart and local Kubernetes profile. The parent repo
 owns the common runner and shared infrastructure. Running one service never
-installs the others. ET1 is currently the only configured application, running
-its existing production startup script with shared PostgreSQL.
+installs the others. ET1 and API are configured, using their existing production startup scripts
+with shared PostgreSQL. API also uses shared Azurite and a separate GoodJob worker.
 
 ## Shared ingress
 
@@ -157,9 +157,9 @@ bin/kubernetes up --service et1
 bin/kubernetes up --build --all
 ```
 
-`--all` selects services with a local profile, currently ET1 only. Repeat
+`--all` selects services with a local profile, currently ET1 and API. Repeat
 `--service` to select a subset. The parent requires an explicit selection;
-it never implicitly deploys everything. Shared ingress and PostgreSQL are installed separately.
+it never implicitly deploys everything. Shared ingress, PostgreSQL and Azurite are installed separately.
 
 ## Configuration ownership
 
@@ -170,6 +170,20 @@ modify the checked-out application chart or `Chart.lock`. ET1's local helper
 overrides the AKS topology rules hardcoded in base 1.4.1.
 
 Commit service configuration in the child repo and shared infrastructure/runner
-changes in this parent repo. PostgreSQL is a separate shared infrastructure
-step; Azurite and the other applications remain future steps. The claim start
-page works, but submitting a claim still needs the API and other integrations.
+changes in this parent repo. See [the API instructions](../systems/api/kubernetes/README.md) for its deployment
+and the first-start worker migration race. ET1 connects directly to the internal API Service; fake
+external integrations remain future steps.
+
+## Shared Azurite
+
+From the parent, run `bin/kubernetes azurite`. This installs the blob emulator
+with a retained 5Gi PVC into `et-full-system-infra`, waits for readiness and
+creates `et-api-test-container` and `et-api-direct-test-container` if absent.
+Initialization is safe to repeat. The internal endpoint is
+`http://azurite.et-full-system-infra.svc.cluster.local:10000`; no ingress is needed
+for the current application proxy routes. Credentials are the standard public
+Azurite development account and key, not Azure production credentials.
+
+Use `--azurite-values /path/to/values.yaml` to override the image, account,
+containers or storage settings; keep API storage values consistent. The PVC
+`data-azurite-0` retains blobs across pod restarts and Helm removal.

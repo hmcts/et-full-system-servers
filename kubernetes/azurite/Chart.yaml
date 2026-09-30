@@ -1,0 +1,5 @@
+apiVersion: v2
+name: et-local-azurite
+description: Shared local blob storage
+type: application
+version: 0.1.0

@@ -1,0 +1,8 @@
+fakeServices:
+  image: et-full-system-servers-fake-services:latest
+  imagePullPolicy: Never
+mailhog:
+  image: mailhog/mailhog:v1.0.1
+  imagePullPolicy: IfNotPresent
+domain: k8s.orb.local
+ingressClass: et-local

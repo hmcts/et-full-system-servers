@@ -1,0 +1,11 @@
+image: mcr.microsoft.com/azure-storage/azurite:latest
+imagePullPolicy: IfNotPresent
+# Azurite's public development account, not an Azure credential.
+account: devstoreaccount1
+key: Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
+containers:
+  - et-api-test-container
+  - et-api-direct-test-container
+storage:
+  size: 5Gi
+  storageClass: ""
