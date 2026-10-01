@@ -248,3 +248,66 @@ See [ET3 instructions](../systems/et3/kubernetes/README.md) and
 <https://et3.k8s.orb.local/> and <https://admin.k8s.orb.local/>. The local seeded
 admin login is `admin` / `password`. Redis is not deployed; the legacy Sidekiq
 page is expected to fail, while GoodJob uses PostgreSQL.
+
+## Resource usage in k9s
+
+Install Metrics Server once from the parent checkout:
+
+```sh
+bin/kubernetes metrics
+```
+
+This defaults to the orbstack context and installs the pinned official chart.
+k9s can then show live CPU/memory usage and percentages against requests and
+limits. Reconnect k9s if it was opened before installation. See
+[Metrics Server instructions](metrics-server/README.md) for other contexts,
+additional values and command-line checks. OOM enforcement and restart counts
+work independently of Metrics Server.
+
+## Sync production CPU and memory settings
+
+From the parent checkout:
+
+```sh
+bin/kubernetes sync-resources --all --dry-run
+bin/kubernetes sync-resources --all
+```
+
+The default source is the sibling `../cnp-flux-config` checkout. Override its
+location with `--flux-repo /path/to/cnp-flux-config`. The command renders
+`apps/et-pet/prod/base` with Kustomize so environment patches are included. It
+uses `kubectl kustomize` locally and Ruby's standard YAML parser; it does not
+contact a cluster. It reads the checkout's current contents, which may differ
+from what is currently deployed in production.
+
+Only `cpuRequests`, `cpuLimits`, `memoryRequests` and `memoryLimits` are copied,
+for the chart dependencies named by each profile's `imageValues`. Each child
+gets `kubernetes/resources.local.yaml`, loaded after its normal local values
+when rendering/deploying. Existing resource keys are removed from
+`values.local.yaml`, preserving its other settings and comments. Replicas,
+application environment, endpoints and credentials remain local.
+
+A resource omitted or set to null in Flux is omitted from the generated file.
+Old generated overrides are replaced, allowing Helm to fall back to the app
+chart and then dependency defaults. No app/default values are copied. This
+supports moving resource values into app charts and subsequently removing
+them from Flux. Keep generated files in the child repos so ordinary deployment
+does not depend on access to Flux. Avoid reintroducing resource overrides in
+`values.local.yaml`; rerunning sync removes them.
+
+Use `--service et1` (repeat for a subset), or run from a child directory to
+sync that service alone. A profile can set `fluxRelease` when the Flux
+HelmRelease name differs from its `workload`. Missing releases and unresolved
+`valuesFrom` references cause an error before any files are written, rather
+than silently removing overrides.
+
+Sync changes files only. Apply them when ready with:
+
+```sh
+bin/kubernetes up --all --context orbstack
+```
+
+This rolls out changed pod resources and may interrupt running tests.
+Normal deployment never automatically syncs from Flux.
+
+Checks: `python3 -m unittest discover -s tests -p 'test_kubernetes_resources.py'`.
