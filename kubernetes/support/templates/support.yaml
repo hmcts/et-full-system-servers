@@ -42,8 +42,8 @@ spec:
             <<: *ready
             failureThreshold: 36
           resources:
-            requests: {cpu: 100m, memory: 256Mi}
-            limits: {cpu: "2", memory: 2Gi}
+            requests: {cpu: 200m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 2Gi}
 ---
 apiVersion: v1
 kind: Service
@@ -84,8 +84,8 @@ spec:
           readinessProbe:
             httpGet: {path: /api/v2/messages, port: web}
           resources:
-            requests: {cpu: 25m, memory: 32Mi}
-            limits: {cpu: "500m", memory: 256Mi}
+            requests: {cpu: 250m, memory: 400Mi}
+            limits: {cpu: "700m", memory: 800Mi}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

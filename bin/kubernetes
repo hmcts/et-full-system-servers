@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTEXT = "orbstack"
 NAMESPACE = "et-full-system"
+SERVICE_START_ORDER = ("api", "et1", "et3", "admin")
 
 
 def run(*args, **kwargs):
@@ -68,10 +69,14 @@ def with_chart(config, action):
         action(chart)
 
 
-def helm_options(config, domain=None, https_port=None):
+def helm_options(config, domain=None, https_port=None, production=False):
     result = ["--namespace", NAMESPACE, "-f", str(config["values"])]
     for key in config["imageValues"]:
         result.extend(["--set-string", f"{key}={config['image']}"])
+        if not production:
+            # Each image value identifies an application deployment, including workers.
+            replicas_key = key.rsplit(".", 1)[0] + ".replicas" if "." in key else "replicas"
+            result.extend(["--set", f"{replicas_key}=1"])
     if config.get("hostPrefix"):
         domain = domain or config.get("domain", "k8s.orb.local")
         host = f"{config['hostPrefix']}.{domain}"
@@ -211,29 +216,50 @@ def build(config, docker_context):
         str(config["service"]))
 
 
+def install_shared(args):
+    stages = [
+        ("ingress", lambda: install_ingress(args.context, args.ingress_values,
+                                           args.http_port, args.https_port)),
+        ("PostgreSQL", lambda: install_postgres(args.context, args.postgres_values)),
+        ("Azurite and blob containers", lambda: install_azurite(args.context, args.azurite_values)),
+        ("fake services and mail", lambda: install_support(args.context, args.docker_context,
+                                                          args.build, args.support_values, args.domain)),
+        ("Metrics Server", lambda: install_metrics(args.context, args.metrics_values)),
+    ]
+    for name, install in stages:
+        print(f"== Starting shared {name} ==", flush=True)
+        install()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress", "postgres", "azurite", "support", "metrics", "down"])
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--service", action="append", help="select a service; repeat to select several")
-    selection.add_argument("--all", action="store_true", help="select every service with a local profile")
+    selection.add_argument("--all", action="store_true",
+                           help="select every service; up also installs shared infrastructure in startup order")
     parser.add_argument("--build", action="store_true", help="build images before 'up'")
+    parser.add_argument("--production", action="store_true",
+                        help="match chart replica counts instead of eco mode; still deploy locally (up/render only)")
     parser.add_argument("--port", type=int, default=8080, help="localhost port for 'serve' (default: 8080)")
     parser.add_argument("--context", default=DEFAULT_CONTEXT, help="Kubernetes context (default: orbstack)")
     parser.add_argument("--docker-context", default=DEFAULT_CONTEXT, help="Docker build context (default: orbstack; independent of Kubernetes)")
     parser.add_argument("--domain", help="override local service domain, e.g. localhost or dev.example.test")
-    parser.add_argument("--ingress-values", help="additional shared-controller Helm values, only for 'ingress'")
-    parser.add_argument("--postgres-values", help="additional PostgreSQL Helm values, only for postgres")
-    parser.add_argument("--azurite-values", help="additional Azurite values, only for azurite")
+    parser.add_argument("--ingress-values", help="additional ingress values, for ingress or up --all")
+    parser.add_argument("--postgres-values", help="additional PostgreSQL values, for postgres or up --all")
+    parser.add_argument("--azurite-values", help="additional Azurite values, for azurite or up --all")
     parser.add_argument("--http-port", type=int, help="shared ingress HTTP port (default: chart values, 80)")
     parser.add_argument("--https-port", type=int, help="HTTPS port for shared ingress or service URLs (default: 443)")
-    parser.add_argument("--support-values", help="additional support Helm values, only for support")
-    parser.add_argument("--metrics-values", help="additional Metrics Server Helm values, only for metrics")
+    parser.add_argument("--support-values", help="additional support values, for support or up --all")
+    parser.add_argument("--metrics-values", help="additional Metrics Server values, for metrics or up --all")
     parser.add_argument("--dry-run", action="store_true", help="preview down without changes")
     parser.add_argument("-v", "--volumes", action="store_true", help="delete shared PostgreSQL/Azurite PVCs during full down")
     args = parser.parse_args()
+    full_up = args.command == "up" and args.all
     if not args.context.strip() or not args.docker_context.strip():
         parser.error("context names must not be empty")
+    if args.production and args.command not in ("up", "render"):
+        parser.error("--production applies only to up/render")
 
     if args.volumes and args.command != "down":
         parser.error("--volumes/-v applies only to down")
@@ -247,29 +273,29 @@ def main():
     for port in (args.http_port, args.https_port, args.port):
         if port is not None and not 1 <= port <= 65535:
             parser.error("ports must be between 1 and 65535")
-    if args.metrics_values and args.command != "metrics":
-        parser.error("--metrics-values applies only to metrics")
+    if args.metrics_values and args.command != "metrics" and not full_up:
+        parser.error("--metrics-values applies only to metrics or up --all")
     if args.command == "metrics":
         if args.service or args.all or args.build or args.ingress_values or args.postgres_values or args.azurite_values or args.support_values:
             parser.error("metrics is shared infrastructure; do not select/build services or other infrastructure values")
         install_metrics(args.context, args.metrics_values)
         return
-    if args.support_values and args.command != "support":
-        parser.error("--support-values applies only to support")
+    if args.support_values and args.command != "support" and not full_up:
+        parser.error("--support-values applies only to support or up --all")
     if args.command == "support":
         if args.service or args.all or args.ingress_values or args.postgres_values or args.azurite_values:
             parser.error("support is shared infrastructure; do not select services or other infrastructure values")
         install_support(args.context, args.docker_context, args.build, args.support_values, args.domain)
         return
-    if args.azurite_values and args.command != "azurite":
-        parser.error("--azurite-values applies only to azurite")
+    if args.azurite_values and args.command != "azurite" and not full_up:
+        parser.error("--azurite-values applies only to azurite or up --all")
     if args.command == "azurite":
         if args.service or args.all or args.build or args.ingress_values or args.postgres_values:
             parser.error("azurite is shared infrastructure; do not select/build services")
         install_azurite(args.context, args.azurite_values)
         return
-    if args.postgres_values and args.command != "postgres":
-        parser.error("--postgres-values applies only to postgres")
+    if args.postgres_values and args.command != "postgres" and not full_up:
+        parser.error("--postgres-values applies only to postgres or up --all")
     if args.command == "postgres":
         if args.service or args.all or args.build or args.ingress_values:
             parser.error("postgres is shared infrastructure; do not select/build services")
@@ -280,8 +306,8 @@ def main():
             parser.error("ingress is shared infrastructure; do not select/build services")
         install_ingress(args.context, args.ingress_values, args.http_port, args.https_port)
         return
-    if args.ingress_values:
-        parser.error("--ingress-values applies only to 'ingress'")
+    if args.ingress_values and not full_up:
+        parser.error("--ingress-values applies only to ingress or up --all")
 
     def kube(*arguments, **kwargs):
         return kubectl(*arguments, context=args.context, **kwargs)
@@ -310,6 +336,10 @@ def main():
         parser.error(f"'{args.command}' requires exactly one service")
     # Validate every selection before building or touching Kubernetes.
     configs = [load_profile(name, available) for name in names]
+    if full_up:
+        configs.sort(key=lambda config: (
+            SERVICE_START_ORDER.index(config["name"]) if config["name"] in SERVICE_START_ORDER
+            else len(SERVICE_START_ORDER), config["name"]))
     if args.command == "down":
         teardown(configs, args.context, full_down, args.volumes, args.dry_run)
         return
@@ -319,22 +349,26 @@ def main():
                         NAMESPACE, "--dry-run=client", "-o", "yaml",
                         capture_output=True, text=True).stdout
         kube("apply", "-f", "-", input=namespace, text=True)
+        if full_up:
+            install_shared(args)
     for config in configs:
+        if args.command == "up":
+            print(f"== Starting {config['name']} ({config['release']}) ==", flush=True)
         if args.command == "build" or args.build:
             build(config, args.docker_context)
         if args.command == "render":
             with_chart(config, lambda chart: run("helm", "template", config["release"],
-                       str(chart), *helm_options(config, args.domain, args.https_port)))
+                       str(chart), *helm_options(config, args.domain, args.https_port, args.production)))
         elif args.command == "up":
             with_chart(config, lambda chart: run("helm", "upgrade", "--install",
                        config["release"], str(chart), "--kube-context", args.context,
-                       *helm_options(config, args.domain, args.https_port),
-                       *(["--wait", "--timeout", "300s"] if config.get("waitForRollout") else [])))
+                       *helm_options(config, args.domain, args.https_port, args.production),
+                       *(["--wait", "--timeout", "300s"] if full_up or config.get("waitForRollout") else [])))
             # A rebuilt image with the same tag does not change the pod template.
             if args.build:
                 kube("rollout", "restart", "deployment", "-l",
                         f"app.kubernetes.io/instance={config['release']}")
-            if config.get("waitForRollout"):
+            if full_up or config.get("waitForRollout"):
                 for workload in config.get("workloads", [config["workload"]]):
                     kube("rollout", "status", f"deployment/{workload}", "--timeout=120s")
             kube("get", "pods", "-l", f"app.kubernetes.io/instance={config['release']}")

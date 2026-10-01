@@ -2,7 +2,7 @@
 
 Each service owns its Helm chart and local Kubernetes profile. The parent repo
 owns the common runner and shared infrastructure. Running one service never
-installs the others. ET1, API, ET3 and admin are configured, using their existing startup scripts
+installs the others unless `up --all` is selected. ET1, API, ET3 and admin are configured, using their existing startup scripts
 with production Rails settings and shared PostgreSQL. API also uses shared
 Azurite and a separate GoodJob worker.
 
@@ -108,6 +108,28 @@ source and shared base chart stay unchanged.
 `build` builds the selected service's Dockerfile. `up --build` builds and deploys
 it, restarting its deployments to pick up the rebuilt local image.
 
+## Eco mode and production mode
+
+By default, `up` and `render` use eco mode: one replica per application
+deployment, including the API queue worker. This applies to every selected
+service and leaves the checked-in chart values unchanged.
+
+Use `--production` for a closer representation of production. Currently, this
+means inheriting the replica counts from the charts and local values instead of
+overriding every deployment to one replica:
+
+```sh
+bin/kubernetes up --all --production
+bin/kubernetes render --service api --production
+```
+
+Run `up` again without the switch to return the selected services to one replica.
+Both modes already inherit resource requests and limits from the application
+charts. `--production` still deploys to the selected local context (`orbstack`
+by default), using local URLs, credentials and support services. It does not
+select a production cluster, enable autoscaling, or change shared infrastructure.
+Rails runs with `RAILS_ENV=production` in both modes.
+
 ## Other clusters, domains and ports
 
 The default Kubernetes and Docker contexts are `orbstack`; use `--context` and
@@ -158,9 +180,31 @@ bin/kubernetes up --service et1
 bin/kubernetes up --build --all
 ```
 
-`--all` selects services with a local profile, currently ET1, API, ET3 and admin. Repeat
-`--service` to select a subset. The parent requires an explicit selection;
-it never implicitly deploys everything. Shared ingress, PostgreSQL, Azurite and support services are installed separately.
+`up --all` brings up the full setup in this order, waiting for each stage:
+
+1. Shared ingress, PostgreSQL, Azurite (including blob container initialization),
+   fake services/mail and Metrics Server.
+2. API, whose web startup creates and migrates its databases.
+3. ET1, then ET3, each preparing its own database during startup.
+4. Admin, which reads all three applications' databases.
+
+This works after `down -v` and also upgrades an existing setup. A failed stage
+stops the command before starting later stages; the console identifies each
+stage. It uses the configured application readiness probes and rollout checks,
+not an end-to-end workflow test. API web and worker still start within the same
+Helm release; the documented first-start worker race is unchanged.
+
+With `--build`, both the fake-services image and all application images are
+built. Without it, those local images must already be available. `--production`
+uses chart replica counts for every application as described above.
+`--ingress-values`, `--postgres-values`, `--azurite-values`, `--support-values`
+and `--metrics-values` also work with `up --all`, as do the context, domain and
+ingress port options.
+
+Repeat `--service` to select a subset. A single service or an explicitly selected
+subset does not install shared infrastructure or other applications; prepare
+its dependencies first. Other commands with `--all` select all configured
+applications. The parent requires an explicit selection.
 
 ## Configuration ownership
 
@@ -301,19 +345,14 @@ teardown because the data is shared. Stop tests before stopping their services.
 To start again from the parent:
 
 ```sh
-bin/kubernetes ingress
-bin/kubernetes postgres
-bin/kubernetes azurite
-bin/kubernetes support          # add --build if needed
-bin/kubernetes metrics
-bin/kubernetes up --service api --service et1 --service et3 --service admin
+bin/kubernetes up --all
 ```
 
-Add `--build` to `up` to rebuild application code. This order prepares all
+Add `--build` to rebuild application and fake-services code. This order prepares all
 databases before admin starts. Existing startup scripts create, migrate and
 seed databases after a reset. CPU/memory values come from the application
 charts and their base defaults; the runner no longer reads resource override
 files or syncs from Flux.
 
-Checks use mocked cluster calls:
-`python3 -m unittest discover -s tests -p 'test_kubernetes_down.py'`.
+Startup coordination checks use mocked cluster calls:
+`python3 -m unittest discover -s tests -p 'test_kubernetes_up.py'`.
