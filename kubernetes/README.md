@@ -264,50 +264,56 @@ limits. Reconnect k9s if it was opened before installation. See
 additional values and command-line checks. OOM enforcement and restart counts
 work independently of Metrics Server.
 
-## Sync production CPU and memory settings
+## Stop or reset the local setup
 
 From the parent checkout:
 
 ```sh
-bin/kubernetes sync-resources --all --dry-run
-bin/kubernetes sync-resources --all
+bin/kubernetes down --dry-run   # preview without changing the cluster
+bin/kubernetes down             # uninstall apps and shared infrastructure
+bin/kubernetes down -v          # also delete PostgreSQL/Azurite PVCs and data
 ```
 
-The default source is the sibling `../cnp-flux-config` checkout. Override its
-location with `--flux-repo /path/to/cnp-flux-config`. The command renders
-`apps/et-pet/prod/base` with Kustomize so environment patches are included. It
-uses `kubectl kustomize` locally and Ruby's standard YAML parser; it does not
-contact a cluster. It reads the checkout's current contents, which may differ
-from what is currently deployed in production.
+The default context is `orbstack`; every cluster command explicitly selects
+it. Full teardown uninstalls configured app releases plus support, PostgreSQL,
+Azurite, ingress and Metrics Server. It waits for removal, skips already absent
+releases and leaves unrelated releases alone.
 
-Only `cpuRequests`, `cpuLimits`, `memoryRequests` and `memoryLimits` are copied,
-for the chart dependencies named by each profile's `imageValues`. Each child
-gets `kubernetes/resources.local.yaml`, loaded after its normal local values
-when rendering/deploying. Existing resource keys are removed from
-`values.local.yaml`, preserving its other settings and comments. Replicas,
-application environment, endpoints and credentials remain local.
+Without `-v`, the retained `data-postgres-0` and `data-azurite-0` claims are reused
+on startup. `-v`/`--volumes` deletes those claims after workloads stop, destroying
+their data on OrbStack's default storage class. Other storage classes may retain
+backing PVs according to their reclaim policy. Namespaces, images and source
+files remain. Fake CCD/Notify state and MailHog messages are ephemeral and are
+lost when those pods stop, even without `-v`, as in Compose.
 
-A resource omitted or set to null in Flux is omitted from the generated file.
-Old generated overrides are replaced, allowing Helm to fall back to the app
-chart and then dependency defaults. No app/default values are copied. This
-supports moving resource values into app charts and subsequently removing
-them from Flux. Keep generated files in the child repos so ordinary deployment
-does not depend on access to Flux. Avoid reintroducing resource overrides in
-`values.local.yaml`; rerunning sync removes them.
-
-Use `--service et1` (repeat for a subset), or run from a child directory to
-sync that service alone. A profile can set `fluxRelease` when the Flux
-HelmRelease name differs from its `workload`. Missing releases and unresolved
-`valuesFrom` references cause an error before any files are written, rather
-than silently removing overrides.
-
-Sync changes files only. Apply them when ready with:
+To stop only one application:
 
 ```sh
-bin/kubernetes up --all --context orbstack
+bin/kubernetes down --service api
+# Or from systems/api:
+../../bin/kubernetes down
 ```
 
-This rolls out changed pod resources and may interrupt running tests.
-Normal deployment never automatically syncs from Flux.
+Shared infrastructure stays running for partial teardown. `down --all` selects
+the full setup even from a child directory. `-v` is rejected for partial
+teardown because the data is shared. Stop tests before stopping their services.
 
-Checks: `python3 -m unittest discover -s tests -p 'test_kubernetes_resources.py'`.
+To start again from the parent:
+
+```sh
+bin/kubernetes ingress
+bin/kubernetes postgres
+bin/kubernetes azurite
+bin/kubernetes support          # add --build if needed
+bin/kubernetes metrics
+bin/kubernetes up --service api --service et1 --service et3 --service admin
+```
+
+Add `--build` to `up` to rebuild application code. This order prepares all
+databases before admin starts. Existing startup scripts create, migrate and
+seed databases after a reset. CPU/memory values come from the application
+charts and their base defaults; the runner no longer reads resource override
+files or syncs from Flux.
+
+Checks use mocked cluster calls:
+`python3 -m unittest discover -s tests -p 'test_kubernetes_down.py'`.
