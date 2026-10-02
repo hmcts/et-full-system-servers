@@ -141,6 +141,7 @@ def install_support(context, docker_context, build_image=False, extra_values=Non
     command = ["helm", "upgrade", "--install", "et-local-support",
                str(ROOT / "kubernetes/support"), "--kube-context", context,
                "--namespace", "et-full-system-infra", "--create-namespace",
+               "--set-file", f"fakeServices.notifyConfig={ROOT / 'support/fake_services/config/gov_fake_notify.yaml'}",
                "--wait", "--timeout", "180s"]
     if extra_values:
         command.extend(["-f", str(Path(extra_values).resolve())])
@@ -208,7 +209,7 @@ def teardown(configs, context, shared=False, volumes=False, dry_run=False):
         print("Dry run: no cluster resources changed.")
     else:
         print("Local releases removed. " + ("PostgreSQL/Azurite PVCs deleted." if volumes else
-              "Persistent data retained; fake CCD/Notify state and MailHog mail are ephemeral."))
+              "Persistent data retained; fake CCD/Notify state and Mailpit mail are ephemeral."))
 
 
 def build(config, docker_context):

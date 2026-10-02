@@ -1,8 +1,15 @@
 fakeServices:
   image: et-full-system-servers-fake-services:latest
   imagePullPolicy: Never
-mailhog:
-  image: mailhog/mailhog:v1.0.1
+  # The runner supplies the shared Notify configuration with --set-file.
+  notifyConfig: ""
+  smtpHost: mailpit
+mailpit:
+  image: axllent/mailpit:v1.31.3
   imagePullPolicy: IfNotPresent
+  maxMessages: 500
+  resources:
+    requests: {cpu: 100m, memory: 64Mi}
+    limits: {cpu: "700m", memory: 256Mi}
 domain: k8s.orb.local
 ingressClass: et-local

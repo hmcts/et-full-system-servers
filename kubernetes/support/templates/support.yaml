@@ -1,3 +1,12 @@
+{{- $notifyConfig := regexReplaceAll "(?m)^  smtp_address:.*$" (required "Supply fakeServices.notifyConfig using --set-file" .Values.fakeServices.notifyConfig) (printf "  smtp_address: %s" (.Values.fakeServices.smtpHost | quote)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fake-notify-config
+data:
+  gov_fake_notify.yaml: |
+{{ $notifyConfig | indent 4 }}
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -21,14 +30,25 @@ spec:
       app.kubernetes.io/name: et-local-fake-services
   template:
     metadata:
+      annotations:
+        checksum/notify-config: {{ $notifyConfig | sha256sum | quote }}
       labels:
         app.kubernetes.io/name: et-local-fake-services
     spec:
+      volumes:
+        - name: notify-config
+          configMap:
+            name: fake-notify-config
       containers:
         - name: fake-services
           image: {{ .Values.fakeServices.image | quote }}
           imagePullPolicy: {{ .Values.fakeServices.imagePullPolicy }}
           command: ["./bin/foreman", "start", "--port", "9000"]
+          volumeMounts:
+            - name: notify-config
+              mountPath: /home/app/fake_services/config/gov_fake_notify.yaml
+              subPath: gov_fake_notify.yaml
+              readOnly: true
           ports:
             - {name: acas, containerPort: 9000}
             - {name: ccd, containerPort: 9100}
@@ -48,10 +68,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mailhog
+  name: mailpit
 spec:
   selector:
-    app.kubernetes.io/name: et-local-mailhog
+    app.kubernetes.io/name: et-local-mailpit
   ports:
     - {name: smtp, port: 1025, targetPort: smtp}
     - {name: web, port: 8025, targetPort: web}
@@ -59,33 +79,45 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mailhog
+  name: mailpit
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: et-local-mailhog
+      app.kubernetes.io/name: et-local-mailpit
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: et-local-mailhog
+        app.kubernetes.io/name: et-local-mailpit
     spec:
       containers:
-        - name: mailhog
-          image: {{ .Values.mailhog.image | quote }}
-          imagePullPolicy: {{ .Values.mailhog.imagePullPolicy }}
+        - name: mailpit
+          image: {{ .Values.mailpit.image | quote }}
+          imagePullPolicy: {{ .Values.mailpit.imagePullPolicy }}
           env:
-            - {name: MH_API_BIND_ADDR, value: "0.0.0.0:8025"}
-            - {name: MH_SMTP_BIND_ADDR, value: "0.0.0.0:1025"}
-            - {name: MH_UI_BIND_ADDR, value: "0.0.0.0:8025"}
+            - {name: MP_UI_BIND_ADDR, value: "0.0.0.0:8025"}
+            - {name: MP_SMTP_BIND_ADDR, value: "0.0.0.0:1025"}
+            - {name: MP_DATABASE, value: "/data/mailpit.db"}
+            - {name: MP_MAX_MESSAGES, value: {{ .Values.mailpit.maxMessages | quote }} }
+            - {name: MP_DISABLE_VERSION_CHECK, value: "true"}
+            - {name: MP_SMTP_AUTH_ACCEPT_ANY, value: "true"}
+            - {name: MP_SMTP_AUTH_ALLOW_INSECURE, value: "true"}
           ports:
             - {name: smtp, containerPort: 1025}
             - {name: web, containerPort: 8025}
           readinessProbe:
-            httpGet: {path: /api/v2/messages, port: web}
+            tcpSocket: {port: smtp}
+          startupProbe:
+            tcpSocket: {port: web}
+            periodSeconds: 5
+            failureThreshold: 24
+          volumeMounts:
+            - {name: data, mountPath: /data}
           resources:
-            requests: {cpu: 250m, memory: 400Mi}
-            limits: {cpu: "700m", memory: 800Mi}
+{{ toYaml .Values.mailpit.resources | indent 12 }}
+      volumes:
+        - name: data
+          emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -97,7 +129,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingressClass | quote }}
   rules:
-  {{- range $route := list (dict "host" "mail" "service" "mailhog" "port" 8025) (dict "host" "acas" "service" "fake-services" "port" 9000) (dict "host" "et-ccd" "service" "fake-services" "port" 9100) (dict "host" "notify" "service" "fake-services" "port" 9200) }}
+  {{- range $route := list (dict "host" "mail" "service" "mailpit" "port" 8025) (dict "host" "acas" "service" "fake-services" "port" 9000) (dict "host" "et-ccd" "service" "fake-services" "port" 9100) (dict "host" "notify" "service" "fake-services" "port" 9200) }}
     - host: {{ printf "%s.%s" $route.host $.Values.domain | quote }}
       http:
         paths:

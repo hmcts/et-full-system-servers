@@ -243,18 +243,18 @@ bin/kubernetes support --build
 
 This builds `support/fake_services/Dockerfile` and installs the existing
 Foreman processes (fake ACAS, CCD and Notify) in one pod, matching Compose.
-MailHog runs in a separate pod. If the image is already available, omit
+Mailpit runs in a separate pod. If the image is already available, omit
 `--build`. Application deployment remains separate. The default Kubernetes and
 Docker contexts are `orbstack`; override them independently as for applications.
 
 All support Services live in `et-full-system-infra`. API and ET1 use internal
-DNS names, including that namespace. Fake Notify sends SMTP mail to `mailhog`
+DNS names, including that namespace. Fake Notify sends SMTP mail to `mailpit`
 in its own namespace. Fake ACAS and CCD use their bundled test credentials.
 No application source or production chart values are changed.
 
 Browser access through the shared ingress:
 
-- MailHog: <https://mail.k8s.orb.local/>
+- Mailpit: <https://mail.k8s.orb.local/>
 - Fake CCD: <https://et-ccd.k8s.orb.local/ui/>
 - Fake ACAS: <https://acas.k8s.orb.local/>
 - Fake Notify: <https://notify.k8s.orb.local/>
@@ -266,18 +266,41 @@ browser URLs. `--support-values /path/to/values.yaml` overrides images, pull
 policies and ingress class. Other clusters must have the locally built fake
 services image available.
 
-Fake CCD/Notify state and MailHog messages are ephemeral and reset when their
+Fake CCD/Notify state and Mailpit messages are ephemeral and reset when their
 pods restart, as in the existing Compose setup. PostgreSQL and Azurite retain
 their own persistent data. Support pod readiness checks ports/API availability;
 it does not prove that an entire claim workflow succeeds.
 
+Mailpit is pinned to `axllent/mailpit:v1.31.3` and stores messages in a SQLite
+database on a disk-backed `emptyDir`, not in an in-memory mailbox. It periodically
+prunes the oldest messages to retain the latest 500. Configure the count and
+resource requests/limits through `mailpit.maxMessages` and `mailpit.resources`
+in `kubernetes/support/values.yaml`, or an additional `--support-values` file.
+The database survives a container restart but is lost when its pod is replaced
+or the release is removed; there is no mail PVC. Startup and readiness probes
+check TCP ports without listing message bodies. Automatic version checks are
+disabled; local SMTP accepts the applications' dummy credentials.
+
+All Kubernetes application SMTP hosts use
+`mailpit.et-full-system-infra.svc.cluster.local:1025`. The support runner passes
+the existing fake Notify YAML to Helm with `--set-file`; the chart changes its
+SMTP host and mounts the resulting ConfigMap. Email templates and API keys
+remain shared with Compose. The existing Compose setup continues to use MailHog.
+Updating the mounted Notify configuration restarts the grouped fake-services
+pod, which resets fake CCD/Notify state.
+
+The browser URL stays <https://mail.k8s.orb.local/>. Mailpit's testing API is
+different from MailHog's: search uses `/api/v1/search`, and raw email is fetched
+separately via `/api/v1/message/{ID}/raw`. The full-system tests must be updated
+before their existing MailHog assertions can pass.
+
 During setup, replaying a captured single-claim request returned 202; the API
 worker fetched an ACAS certificate, stored files in Azurite, exported to fake
-CCD and delivered the confirmation email to MailHog.
+CCD and delivered the confirmation email to Mailpit.
 
 ```sh
 kubectl --context orbstack -n et-full-system-infra logs deployment/fake-services --follow
-kubectl --context orbstack -n et-full-system-infra logs deployment/mailhog --follow
+kubectl --context orbstack -n et-full-system-infra logs deployment/mailpit --follow
 ```
 
 ## ET3 and admin
@@ -327,7 +350,7 @@ Without `-v`, the retained `data-postgres-0` and `data-azurite-0` claims are reu
 on startup. `-v`/`--volumes` deletes those claims after workloads stop, destroying
 their data on OrbStack's default storage class. Other storage classes may retain
 backing PVs according to their reclaim policy. Namespaces, images and source
-files remain. Fake CCD/Notify state and MailHog messages are ephemeral and are
+files remain. Fake CCD/Notify state and Mailpit messages are ephemeral and are
 lost when those pods stop, even without `-v`, as in Compose.
 
 To stop only one application:
