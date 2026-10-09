@@ -68,10 +68,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mailpit
+  name: mail
 spec:
   selector:
-    app.kubernetes.io/name: et-local-mailpit
+    app.kubernetes.io/name: et-local-mail
   ports:
     - {name: smtp, port: 1025, targetPort: smtp}
     - {name: web, port: 8025, targetPort: web}
@@ -79,26 +79,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mailpit
+  name: mail
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: et-local-mailpit
+      app.kubernetes.io/name: et-local-mail
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: et-local-mailpit
+        app.kubernetes.io/name: et-local-mail
     spec:
       containers:
-        - name: mailpit
-          image: {{ .Values.mailpit.image | quote }}
-          imagePullPolicy: {{ .Values.mailpit.imagePullPolicy }}
+        - name: mail
+          image: {{ .Values.mail.image | quote }}
+          imagePullPolicy: {{ .Values.mail.imagePullPolicy }}
           env:
             - {name: MP_UI_BIND_ADDR, value: "0.0.0.0:8025"}
             - {name: MP_SMTP_BIND_ADDR, value: "0.0.0.0:1025"}
             - {name: MP_DATABASE, value: "/data/mailpit.db"}
-            - {name: MP_MAX_MESSAGES, value: {{ .Values.mailpit.maxMessages | quote }} }
+            - {name: MP_MAX_MESSAGES, value: {{ .Values.mail.maxMessages | quote }} }
             - {name: MP_DISABLE_VERSION_CHECK, value: "true"}
             - {name: MP_SMTP_AUTH_ACCEPT_ANY, value: "true"}
             - {name: MP_SMTP_AUTH_ALLOW_INSECURE, value: "true"}
@@ -114,7 +114,7 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /data}
           resources:
-{{ toYaml .Values.mailpit.resources | indent 12 }}
+{{ toYaml .Values.mail.resources | indent 12 }}
       volumes:
         - name: data
           emptyDir: {}
@@ -129,7 +129,7 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingressClass | quote }}
   rules:
-  {{- range $route := list (dict "host" "mail" "service" "mailpit" "port" 8025) (dict "host" "acas" "service" "fake-services" "port" 9000) (dict "host" "et-ccd" "service" "fake-services" "port" 9100) (dict "host" "notify" "service" "fake-services" "port" 9200) }}
+  {{- range $route := list (dict "host" "mail" "service" "mail" "port" 8025) (dict "host" "acas" "service" "fake-services" "port" 9000) (dict "host" "et-ccd" "service" "fake-services" "port" 9100) (dict "host" "notify" "service" "fake-services" "port" 9200) }}
     - host: {{ printf "%s.%s" $route.host $.Values.domain | quote }}
       http:
         paths:

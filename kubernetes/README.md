@@ -248,7 +248,7 @@ Mailpit runs in a separate pod. If the image is already available, omit
 Docker contexts are `orbstack`; override them independently as for applications.
 
 All support Services live in `et-full-system-infra`. API and ET1 use internal
-DNS names, including that namespace. Fake Notify sends SMTP mail to `mailpit`
+DNS names, including that namespace. Fake Notify sends SMTP mail to `mail`
 in its own namespace. Fake ACAS and CCD use their bundled test credentials.
 No application source or production chart values are changed.
 
@@ -274,7 +274,7 @@ it does not prove that an entire claim workflow succeeds.
 Mailpit is pinned to `axllent/mailpit:v1.31.3` and stores messages in a SQLite
 database on a disk-backed `emptyDir`, not in an in-memory mailbox. It periodically
 prunes the oldest messages to retain the latest 500. Configure the count and
-resource requests/limits through `mailpit.maxMessages` and `mailpit.resources`
+resource requests/limits through `mail.maxMessages` and `mail.resources`
 in `kubernetes/support/values.yaml`, or an additional `--support-values` file.
 The database survives a container restart but is lost when its pod is replaced
 or the release is removed; there is no mail PVC. Startup and readiness probes
@@ -282,7 +282,7 @@ check TCP ports without listing message bodies. Automatic version checks are
 disabled; local SMTP accepts the applications' dummy credentials.
 
 All Kubernetes application SMTP hosts use
-`mailpit.et-full-system-infra.svc.cluster.local:1025`. The support runner passes
+`mail.et-full-system-infra.svc.cluster.local:1025`. The support runner passes
 the existing fake Notify YAML to Helm with `--set-file`; the chart changes its
 SMTP host and mounts the resulting ConfigMap. Email templates and API keys
 remain shared with Compose. The existing Compose setup continues to use MailHog.
@@ -300,7 +300,7 @@ CCD and delivered the confirmation email to Mailpit.
 
 ```sh
 kubectl --context orbstack -n et-full-system-infra logs deployment/fake-services --follow
-kubectl --context orbstack -n et-full-system-infra logs deployment/mailpit --follow
+kubectl --context orbstack -n et-full-system-infra logs deployment/mail --follow
 ```
 
 ## ET3 and admin
