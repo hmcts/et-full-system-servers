@@ -1,0 +1,397 @@
+#!/usr/bin/env python3
+"""Build or deploy selected local services; default to OrbStack."""
+import argparse
+import json
+import re
+import shlex
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONTEXT = "orbstack"
+NAMESPACE = "et-full-system"
+SERVICE_START_ORDER = ("api", "et1", "et3", "admin")
+
+
+def run(*args, **kwargs):
+    return subprocess.run(args, check=True, **kwargs)
+
+
+def kubectl(*args, context=DEFAULT_CONTEXT, **kwargs):
+    return run("kubectl", "--context", context, "--namespace", NAMESPACE,
+               *args, **kwargs)
+
+
+def profiles():
+    return {path.parents[1].name: path for path in
+            sorted((ROOT / "systems").glob("*/kubernetes/service.json"))}
+
+
+def current_service():
+    cwd = Path.cwd().resolve()
+    for directory in (ROOT / "systems").iterdir():
+        if directory.is_dir() and (cwd == directory.resolve() or directory.resolve() in cwd.parents):
+            return directory.name
+    return None
+
+
+def load_profile(name, available):
+    if name not in available:
+        raise ValueError(f"{name}: no local Kubernetes profile yet. "
+                         "Run 'bin/kubernetes list' to see configured services.")
+    path = available[name]
+    config = json.loads(path.read_text())
+    for key in ("chart", "image", "release", "workload", "imageValues"):
+        if not config.get(key):
+            raise ValueError(f"{path}: missing {key}")
+    service = path.parents[1]
+    chart = (service / config["chart"]).resolve()
+    if service.resolve() not in chart.parents or not (chart / "Chart.yaml").is_file():
+        raise ValueError(f"{path}: chart must be a chart directory inside the service")
+    values = path.parent / "values.local.yaml"
+    if not values.is_file():
+        raise ValueError(f"{path}: missing values.local.yaml")
+    return dict(config, name=name, service=service, chart=chart,
+                values=values, templates=path.parent / "templates")
+
+
+def with_chart(config, action):
+    # Download dependencies into a temporary copy, never the checked-out chart.
+    with tempfile.TemporaryDirectory(prefix="et-kubernetes-") as directory:
+        chart = Path(directory) / config["chart"].name
+        shutil.copytree(config["chart"], chart)
+        if config["templates"].is_dir():
+            shutil.copytree(config["templates"], chart / "templates", dirs_exist_ok=True)
+        run("helm", "dependency", "build", str(chart), "--skip-refresh",
+            stdout=subprocess.DEVNULL)
+        action(chart)
+
+
+def helm_options(config, domain=None, https_port=None, production=False):
+    result = ["--namespace", NAMESPACE, "-f", str(config["values"])]
+    for key in config["imageValues"]:
+        result.extend(["--set-string", f"{key}={config['image']}"])
+        if not production:
+            # Each image value identifies an application deployment, including workers.
+            replicas_key = key.rsplit(".", 1)[0] + ".replicas" if "." in key else "replicas"
+            result.extend(["--set", f"{replicas_key}=1"])
+    if config.get("hostPrefix"):
+        domain = domain or config.get("domain", "k8s.orb.local")
+        host = f"{config['hostPrefix']}.{domain}"
+        port = https_port or config.get("httpsPort", 443)
+        origin = f"https://{host}" + (f":{port}" if port != 443 else "")
+        for key in config.get("ingressValues", []):
+            for suffix, value in [("ingressHost", host),
+                                  ("environment.ROOT_URL", origin),
+                                  ("environment.SERVICE_FQDN", origin),
+                                  ("environment.SENDING_HOST", host)]:
+                result.extend(["--set-string", f"{key}.{suffix}={value}"])
+    return result
+
+
+def install_ingress(context, extra_values=None, http_port=None, https_port=None):
+    config = json.loads((ROOT / "kubernetes/ingress/config.json").read_text())
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", config["release"], config["chart"],
+               "--repo", config["repository"], "--version", config["version"],
+               "--kube-context", context, "--namespace", config["namespace"],
+               "--create-namespace", "--skip-crds", "-f",
+               str(ROOT / "kubernetes/ingress/values.yaml"),
+               "--wait", "--timeout", "120s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    for name, port in [("web", http_port), ("websecure", https_port)]:
+        if port is not None:
+            command.extend(["--set", f"ports.{name}.exposedPort={port}"])
+    run(*command)
+
+
+def install_postgres(context, extra_values=None):
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", "et-local-postgres",
+               str(ROOT / "kubernetes/postgres"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    run(*command)
+
+
+def install_azurite(context, extra_values=None):
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", "et-local-azurite",
+               str(ROOT / "kubernetes/azurite"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    run(*command)
+    run("kubectl", "--context", context, "--namespace", "et-full-system-infra",
+        "exec", "-i", "statefulset/azurite", "--", "node", "-",
+        input=(ROOT / "kubernetes/azurite/create-containers.js").read_text(), text=True)
+
+
+def install_support(context, docker_context, build_image=False, extra_values=None, domain=None):
+    kubectl("get", "nodes", context=context)
+    if build_image:
+        run("docker", "--context", docker_context, "build", "-t",
+            "et-full-system-servers-fake-services:latest", str(ROOT / "support/fake_services"))
+    command = ["helm", "upgrade", "--install", "et-local-support",
+               str(ROOT / "kubernetes/support"), "--kube-context", context,
+               "--namespace", "et-full-system-infra", "--create-namespace",
+               "--set-file", f"fakeServices.notifyConfig={ROOT / 'support/fake_services/config/gov_fake_notify.yaml'}",
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    if domain:
+        command.extend(["--set-string", f"domain={domain}"])
+    run(*command)
+    if build_image:
+        run("kubectl", "--context", context, "-n", "et-full-system-infra",
+            "rollout", "restart", "deployment/fake-services")
+        run("kubectl", "--context", context, "-n", "et-full-system-infra",
+            "rollout", "status", "deployment/fake-services", "--timeout=180s")
+
+
+def install_metrics(context, extra_values=None):
+    config = json.loads((ROOT / "kubernetes/metrics-server/config.json").read_text())
+    kubectl("get", "nodes", context=context)
+    command = ["helm", "upgrade", "--install", config["release"], config["chart"],
+               "--repo", config["repository"], "--version", config["version"],
+               "--kube-context", context, "--namespace", config["namespace"],
+               "--create-namespace", "-f", str(ROOT / "kubernetes/metrics-server/values.yaml"),
+               "--wait", "--timeout", "180s"]
+    if extra_values:
+        command.extend(["-f", str(Path(extra_values).resolve())])
+    run(*command)
+
+
+def teardown(configs, context, shared=False, volumes=False, dry_run=False):
+    targets = [(config["release"], NAMESPACE) for config in configs]
+    if shared:
+        infra = "et-full-system-infra"
+        targets.extend([(name, infra) for name in
+                        ("et-local-support", "et-local-azurite", "et-local-postgres")])
+        for component in ("ingress", "metrics-server"):
+            config = json.loads((ROOT / "kubernetes" / component / "config.json").read_text())
+            targets.append((config["release"], config["namespace"]))
+    if volumes and not shared:
+        raise ValueError("Shared PVCs require a full teardown: run 'down -v' from the parent or 'down --all -v'")
+    # Read all release inventories before deleting anything. This also makes down repeatable.
+    installed = {}
+    if not dry_run:
+        for namespace in dict.fromkeys(namespace for _, namespace in targets):
+            releases = json.loads(run("helm", "list", "--all", "--kube-context", context,
+                                      "--namespace", namespace, "--output", "json",
+                                      capture_output=True, text=True).stdout)
+            installed[namespace] = {release["name"] for release in releases}
+    for release, namespace in dict.fromkeys(targets):
+        command = ["helm", "uninstall", release, "--kube-context", context,
+                   "--namespace", namespace, "--wait", "--timeout", "180s"]
+        if dry_run:
+            print(shlex.join(command))
+        elif release in installed[namespace]:
+            run(*command)
+        else:
+            print(f"{namespace}/{release}: already absent")
+    if volumes:
+        # These retained StatefulSet claims are fixed by the parent charts.
+        command = ["kubectl", "--context", context, "--namespace", "et-full-system-infra",
+                   "delete", "pvc", "data-postgres-0", "data-azurite-0",
+                   "--ignore-not-found", "--wait=true", "--timeout=180s"]
+        if dry_run:
+            print(shlex.join(command))
+        else:
+            run(*command)
+    if dry_run:
+        print("Dry run: no cluster resources changed.")
+    else:
+        print("Local releases removed. " + ("PostgreSQL/Azurite PVCs deleted." if volumes else
+              "Persistent data retained; fake CCD/Notify state and Mailpit mail are ephemeral."))
+
+
+def build(config, docker_context):
+    run("docker", "--context", docker_context, "build", "-t", config["image"],
+        str(config["service"]))
+
+
+def install_shared(args):
+    stages = [
+        ("ingress", lambda: install_ingress(args.context, args.ingress_values,
+                                           args.http_port, args.https_port)),
+        ("PostgreSQL", lambda: install_postgres(args.context, args.postgres_values)),
+        ("Azurite and blob containers", lambda: install_azurite(args.context, args.azurite_values)),
+        ("fake services and mail", lambda: install_support(args.context, args.docker_context,
+                                                          args.build, args.support_values, args.domain)),
+        ("Metrics Server", lambda: install_metrics(args.context, args.metrics_values)),
+    ]
+    for name, install in stages:
+        print(f"== Starting shared {name} ==", flush=True)
+        install()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["list", "render", "build", "up", "status", "logs", "serve", "ingress", "postgres", "azurite", "support", "metrics", "down"])
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--service", action="append", help="select a service; repeat to select several")
+    selection.add_argument("--all", action="store_true",
+                           help="select every service; up also installs shared infrastructure in startup order")
+    parser.add_argument("--build", action="store_true", help="build images before 'up'")
+    parser.add_argument("--production", action="store_true",
+                        help="match chart replica counts instead of eco mode; still deploy locally (up/render only)")
+    parser.add_argument("--port", type=int, default=8080, help="localhost port for 'serve' (default: 8080)")
+    parser.add_argument("--context", default=DEFAULT_CONTEXT, help="Kubernetes context (default: orbstack)")
+    parser.add_argument("--docker-context", default=DEFAULT_CONTEXT, help="Docker build context (default: orbstack; independent of Kubernetes)")
+    parser.add_argument("--domain", help="override local service domain, e.g. localhost or dev.example.test")
+    parser.add_argument("--ingress-values", help="additional ingress values, for ingress or up --all")
+    parser.add_argument("--postgres-values", help="additional PostgreSQL values, for postgres or up --all")
+    parser.add_argument("--azurite-values", help="additional Azurite values, for azurite or up --all")
+    parser.add_argument("--http-port", type=int, help="shared ingress HTTP port (default: chart values, 80)")
+    parser.add_argument("--https-port", type=int, help="HTTPS port for shared ingress or service URLs (default: 443)")
+    parser.add_argument("--support-values", help="additional support values, for support or up --all")
+    parser.add_argument("--metrics-values", help="additional Metrics Server values, for metrics or up --all")
+    parser.add_argument("--dry-run", action="store_true", help="preview down without changes")
+    parser.add_argument("-v", "--volumes", action="store_true", help="delete shared PostgreSQL/Azurite PVCs during full down")
+    args = parser.parse_args()
+    full_up = args.command == "up" and args.all
+    if not args.context.strip() or not args.docker_context.strip():
+        parser.error("context names must not be empty")
+    if args.production and args.command not in ("up", "render"):
+        parser.error("--production applies only to up/render")
+
+    if args.volumes and args.command != "down":
+        parser.error("--volumes/-v applies only to down")
+    if args.dry_run and args.command != "down":
+        parser.error("--dry-run applies only to down")
+    if args.command == "down" and any((args.build, args.ingress_values, args.postgres_values,
+                                       args.azurite_values, args.support_values, args.metrics_values)):
+        parser.error("down does not build services or accept installation values")
+    if args.domain and not re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?", args.domain):
+        parser.error("--domain must be a DNS domain, without a scheme or port")
+    for port in (args.http_port, args.https_port, args.port):
+        if port is not None and not 1 <= port <= 65535:
+            parser.error("ports must be between 1 and 65535")
+    if args.metrics_values and args.command != "metrics" and not full_up:
+        parser.error("--metrics-values applies only to metrics or up --all")
+    if args.command == "metrics":
+        if args.service or args.all or args.build or args.ingress_values or args.postgres_values or args.azurite_values or args.support_values:
+            parser.error("metrics is shared infrastructure; do not select/build services or other infrastructure values")
+        install_metrics(args.context, args.metrics_values)
+        return
+    if args.support_values and args.command != "support" and not full_up:
+        parser.error("--support-values applies only to support or up --all")
+    if args.command == "support":
+        if args.service or args.all or args.ingress_values or args.postgres_values or args.azurite_values:
+            parser.error("support is shared infrastructure; do not select services or other infrastructure values")
+        install_support(args.context, args.docker_context, args.build, args.support_values, args.domain)
+        return
+    if args.azurite_values and args.command != "azurite" and not full_up:
+        parser.error("--azurite-values applies only to azurite or up --all")
+    if args.command == "azurite":
+        if args.service or args.all or args.build or args.ingress_values or args.postgres_values:
+            parser.error("azurite is shared infrastructure; do not select/build services")
+        install_azurite(args.context, args.azurite_values)
+        return
+    if args.postgres_values and args.command != "postgres" and not full_up:
+        parser.error("--postgres-values applies only to postgres or up --all")
+    if args.command == "postgres":
+        if args.service or args.all or args.build or args.ingress_values:
+            parser.error("postgres is shared infrastructure; do not select/build services")
+        install_postgres(args.context, args.postgres_values)
+        return
+    if args.command == "ingress":
+        if args.service or args.all or args.build:
+            parser.error("ingress is shared infrastructure; do not select/build services")
+        install_ingress(args.context, args.ingress_values, args.http_port, args.https_port)
+        return
+    if args.ingress_values and not full_up:
+        parser.error("--ingress-values applies only to ingress or up --all")
+
+    def kube(*arguments, **kwargs):
+        return kubectl(*arguments, context=args.context, **kwargs)
+
+    available = profiles()
+    if args.command == "list":
+        for directory in sorted((ROOT / "systems").iterdir()):
+            if directory.is_dir() and (directory / "charts").is_dir():
+                print(f"{directory.name}: {'configured' if directory.name in available else 'not configured yet'}")
+        return
+    if args.build and args.command != "up":
+        parser.error("--build applies only to 'up'; use the 'build' command otherwise")
+    full_down = args.command == "down" and (args.all or (not args.service and not current_service()))
+    if args.all or full_down:
+        names = list(available)
+    elif args.service:
+        names = list(dict.fromkeys(args.service))
+    else:
+        name = current_service()
+        if not name:
+            parser.error("run from a service directory, or explicitly select --service NAME / --all")
+        names = [name]
+    if not names and not full_down:
+        parser.error("no services have local Kubernetes profiles yet")
+    if args.command in ("logs", "serve") and len(names) != 1:
+        parser.error(f"'{args.command}' requires exactly one service")
+    # Validate every selection before building or touching Kubernetes.
+    configs = [load_profile(name, available) for name in names]
+    if full_up:
+        configs.sort(key=lambda config: (
+            SERVICE_START_ORDER.index(config["name"]) if config["name"] in SERVICE_START_ORDER
+            else len(SERVICE_START_ORDER), config["name"]))
+    if args.command == "down":
+        teardown(configs, args.context, full_down, args.volumes, args.dry_run)
+        return
+    if args.command == "up":
+        kube("get", "nodes")
+        namespace = run("kubectl", "--context", args.context, "create", "namespace",
+                        NAMESPACE, "--dry-run=client", "-o", "yaml",
+                        capture_output=True, text=True).stdout
+        kube("apply", "-f", "-", input=namespace, text=True)
+        if full_up:
+            install_shared(args)
+    for config in configs:
+        if args.command == "up":
+            print(f"== Starting {config['name']} ({config['release']}) ==", flush=True)
+        if args.command == "build" or args.build:
+            build(config, args.docker_context)
+        if args.command == "render":
+            with_chart(config, lambda chart: run("helm", "template", config["release"],
+                       str(chart), *helm_options(config, args.domain, args.https_port, args.production)))
+        elif args.command == "up":
+            with_chart(config, lambda chart: run("helm", "upgrade", "--install",
+                       config["release"], str(chart), "--kube-context", args.context,
+                       *helm_options(config, args.domain, args.https_port, args.production),
+                       *(["--wait", "--timeout", "300s"] if full_up or config.get("waitForRollout") else [])))
+            # A rebuilt image with the same tag does not change the pod template.
+            if args.build:
+                kube("rollout", "restart", "deployment", "-l",
+                        f"app.kubernetes.io/instance={config['release']}")
+            if full_up or config.get("waitForRollout"):
+                for workload in config.get("workloads", [config["workload"]]):
+                    kube("rollout", "status", f"deployment/{workload}", "--timeout=120s")
+            kube("get", "pods", "-l", f"app.kubernetes.io/instance={config['release']}")
+            if config.get("hostPrefix"):
+                domain = args.domain or config.get("domain", "k8s.orb.local")
+                port = args.https_port or config.get("httpsPort", 443)
+                suffix = f":{port}" if port != 443 else ""
+                print(f"Open https://{config['hostPrefix']}.{domain}{suffix}/")
+        elif args.command == "status":
+            kube("get", "deployment,pod,service", "-l",
+                    f"app.kubernetes.io/instance={config['release']}")
+        elif args.command == "logs":
+            kube("logs", f"deployment/{config['workload']}", "--tail=100", "--follow")
+        elif args.command == "serve":
+            kube("port-forward", f"service/{config['workload']}",
+                    f"{args.port}:80", "--address", "127.0.0.1")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(error.returncode)
+    except (ValueError, FileNotFoundError) as error:
+        raise SystemExit(str(error))

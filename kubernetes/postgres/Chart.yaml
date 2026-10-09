@@ -1,0 +1,6 @@
+apiVersion: v2
+name: et-local-postgres
+description: Shared PostgreSQL for local Employment Tribunals development
+type: application
+version: 0.1.0
+appVersion: "15"

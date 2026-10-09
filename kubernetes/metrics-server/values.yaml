@@ -1,0 +1,6 @@
+# Standard Kubernetes Metrics Server; independent of application deployments.
+replicas: 1
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi

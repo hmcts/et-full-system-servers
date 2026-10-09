@@ -204,11 +204,10 @@ services:
       retries: 10
     networks:
       - et_full_system
-  mailhog:
-    image: mailhog/mailhog:v1.0.1
-    entrypoint: ["/bin/sh", "-c", "MailHog &>/dev/null"]
+  mail:
+    image: axllent/mailpit:v1.31.3
     healthcheck:
-      test: nc 127.0.0.1 8025 -z
+      test: ["CMD", "/mailpit", "readyz"]
       interval: 10s
       timeout: 30s
       retries: 10
@@ -217,11 +216,17 @@ services:
       - traefik.http.routers.mail-router.service=mail-service
       - traefik.http.services.mail-service.loadbalancer.server.port=8025
     environment:
-      MH_API_BIND_ADDR: 0.0.0.0:8025
-      MH_SMTP_BIND_ADDR: 0.0.0.0:1025
-      MH_UI_BIND_ADDR: 0.0.0.0:8025
+      MP_UI_BIND_ADDR: 0.0.0.0:8025
+      MP_SMTP_BIND_ADDR: 0.0.0.0:1025
+      MP_MAX_MESSAGES: "500"
+      MP_DISABLE_VERSION_CHECK: "true"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
     networks:
-      - et_full_system
+      et_full_system:
+        # Preserve existing app and fake Notify SMTP configuration.
+        aliases:
+          - mailhog
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     labels:
@@ -263,7 +268,7 @@ services:
   finished-development:
     image: bash
     depends_on:
-      mailhog:
+      mail:
         condition: service_healthy
       fake-services:
         condition: service_healthy

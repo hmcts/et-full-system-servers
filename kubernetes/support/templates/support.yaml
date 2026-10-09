@@ -1,0 +1,143 @@
+{{- $notifyConfig := regexReplaceAll "(?m)^  smtp_address:.*$" (required "Supply fakeServices.notifyConfig using --set-file" .Values.fakeServices.notifyConfig) (printf "  smtp_address: %s" (.Values.fakeServices.smtpHost | quote)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fake-notify-config
+data:
+  gov_fake_notify.yaml: |
+{{ $notifyConfig | indent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fake-services
+spec:
+  selector:
+    app.kubernetes.io/name: et-local-fake-services
+  ports:
+    - {name: acas, port: 9000, targetPort: 9000}
+    - {name: ccd, port: 9100, targetPort: 9100}
+    - {name: notify, port: 9200, targetPort: 9200}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fake-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: et-local-fake-services
+  template:
+    metadata:
+      annotations:
+        checksum/notify-config: {{ $notifyConfig | sha256sum | quote }}
+      labels:
+        app.kubernetes.io/name: et-local-fake-services
+    spec:
+      volumes:
+        - name: notify-config
+          configMap:
+            name: fake-notify-config
+      containers:
+        - name: fake-services
+          image: {{ .Values.fakeServices.image | quote }}
+          imagePullPolicy: {{ .Values.fakeServices.imagePullPolicy }}
+          command: ["./bin/foreman", "start", "--port", "9000"]
+          volumeMounts:
+            - name: notify-config
+              mountPath: /home/app/fake_services/config/gov_fake_notify.yaml
+              subPath: gov_fake_notify.yaml
+              readOnly: true
+          ports:
+            - {name: acas, containerPort: 9000}
+            - {name: ccd, containerPort: 9100}
+            - {name: notify, containerPort: 9200}
+          readinessProbe: &ready
+            exec:
+              command: ["sh", "-c", "nc -z 127.0.0.1 9000 && nc -z 127.0.0.1 9100 && nc -z 127.0.0.1 9200"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+          startupProbe:
+            <<: *ready
+            failureThreshold: 36
+          resources:
+            requests: {cpu: 200m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 2Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail
+spec:
+  selector:
+    app.kubernetes.io/name: et-local-mail
+  ports:
+    - {name: smtp, port: 1025, targetPort: smtp}
+    - {name: web, port: 8025, targetPort: web}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: et-local-mail
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: et-local-mail
+    spec:
+      containers:
+        - name: mail
+          image: {{ .Values.mail.image | quote }}
+          imagePullPolicy: {{ .Values.mail.imagePullPolicy }}
+          env:
+            - {name: MP_UI_BIND_ADDR, value: "0.0.0.0:8025"}
+            - {name: MP_SMTP_BIND_ADDR, value: "0.0.0.0:1025"}
+            - {name: MP_DATABASE, value: "/data/mailpit.db"}
+            - {name: MP_MAX_MESSAGES, value: {{ .Values.mail.maxMessages | quote }} }
+            - {name: MP_DISABLE_VERSION_CHECK, value: "true"}
+            - {name: MP_SMTP_AUTH_ACCEPT_ANY, value: "true"}
+            - {name: MP_SMTP_AUTH_ALLOW_INSECURE, value: "true"}
+          ports:
+            - {name: smtp, containerPort: 1025}
+            - {name: web, containerPort: 8025}
+          readinessProbe:
+            tcpSocket: {port: smtp}
+          startupProbe:
+            tcpSocket: {port: web}
+            periodSeconds: 5
+            failureThreshold: 24
+          volumeMounts:
+            - {name: data, mountPath: /data}
+          resources:
+{{ toYaml .Values.mail.resources | indent 12 }}
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: support-services
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: {{ .Values.ingressClass | quote }}
+  rules:
+  {{- range $route := list (dict "host" "mail" "service" "mail" "port" 8025) (dict "host" "acas" "service" "fake-services" "port" 9000) (dict "host" "et-ccd" "service" "fake-services" "port" 9100) (dict "host" "notify" "service" "fake-services" "port" 9200) }}
+    - host: {{ printf "%s.%s" $route.host $.Values.domain | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $route.service }}
+                port:
+                  number: {{ $route.port }}
+  {{- end }}

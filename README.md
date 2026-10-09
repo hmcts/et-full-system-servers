@@ -117,3 +117,10 @@ docker compose down -v --rmi all
 and then restart as normal.
 
 -------------------------------------------
+
+## Local Kubernetes (OrbStack)
+
+Services can be built and deployed individually from their own directories,
+with an optional parent command for a selected set or all configured services.
+ET1, API, ET3 and admin have local Kubernetes profiles, with shared PostgreSQL, Azurite and fake support services. See
+[the Kubernetes instructions](kubernetes/README.md).
